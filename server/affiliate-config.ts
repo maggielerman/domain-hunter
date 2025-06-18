@@ -82,33 +82,58 @@ export const AFFILIATE_CONFIGS: AffiliateConfig[] = [
 ];
 
 export function generateAffiliateLink(config: AffiliateConfig, domain: string): string {
-  const url = new URL(config.baseUrl);
+  // Construct proper affiliate URLs for each registrar
+  let url: URL;
   
-  // Add domain search parameter
   if (config.name === 'GoDaddy') {
+    // GoDaddy: Direct domain search with affiliate tracking
+    url = new URL('https://www.godaddy.com/domainsearch/find');
+    url.searchParams.set('checkAvail', '1');
     url.searchParams.set('domainToCheck', domain);
-  } else if (config.name === 'Namecheap') {
-    url.searchParams.set('domain', domain);
-  } else if (config.name === 'Hover') {
-    url.searchParams.set('domain-name', domain);
-  } else if (config.name === 'Porkbun') {
-    url.searchParams.set('q', domain);
-  } else if (config.name === 'Squarespace') {
-    url.searchParams.set('query', domain);
-  }
-  
-  // Add affiliate tracking
-  if (config.affiliateId) {
-    url.searchParams.set(config.trackingParam, config.affiliateId);
-  }
-  
-  // Add additional parameters
-  if (config.additionalParams) {
-    Object.entries(config.additionalParams).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value);
+    if (config.affiliateId) {
+      url.searchParams.set('isc', config.affiliateId);
+      if (config.additionalParams?.plid) {
+        url.searchParams.set('plid', config.additionalParams.plid);
       }
-    });
+    }
+  } else if (config.name === 'Namecheap') {
+    // Namecheap: Domain registration results page
+    url = new URL('https://www.namecheap.com/domains/registration/results/');
+    url.searchParams.set('domain', domain);
+    if (config.affiliateId) {
+      url.searchParams.set('afftrack', config.affiliateId);
+    }
+  } else if (config.name === 'Hover') {
+    // Hover: Domain search results
+    url = new URL('https://hover.com/domains/results');
+    url.searchParams.set('utf8', '✓');
+    url.searchParams.set('domain-name', domain);
+    if (config.affiliateId) {
+      url.searchParams.set('utm_source', config.affiliateId);
+      url.searchParams.set('utm_medium', 'affiliate');
+      url.searchParams.set('utm_campaign', 'domain-search');
+    }
+  } else if (config.name === 'Porkbun') {
+    // Porkbun: Direct to domain checkout
+    url = new URL('https://porkbun.com/checkout/search');
+    url.searchParams.set('q', domain);
+    if (config.affiliateId) {
+      url.searchParams.set('coupon', config.affiliateId);
+    }
+  } else if (config.name === 'Squarespace') {
+    // Squarespace: Domain search
+    url = new URL('https://domains.squarespace.com/search');
+    url.searchParams.set('query', domain);
+    if (config.affiliateId) {
+      url.searchParams.set('channel', config.affiliateId);
+    }
+  } else {
+    // Fallback to base URL with domain parameter
+    url = new URL(config.baseUrl);
+    url.searchParams.set('domain', domain);
+    if (config.affiliateId) {
+      url.searchParams.set(config.trackingParam, config.affiliateId);
+    }
   }
   
   return url.toString();

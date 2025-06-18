@@ -28,9 +28,34 @@ export default function DomainSearchForm({
 }: DomainSearchFormProps) {
   const { toast } = useToast();
 
+  const exactSearchMutation = useMutation({
+    mutationFn: async (exactDomain: string) => {
+      const response = await apiRequest('/api/domains/check', {
+        method: 'POST',
+        body: JSON.stringify({ domain: exactDomain }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to check domain availability');
+      }
+      
+      return response.json();
+    },
+  });
+
   const generateDomainsMutation = useMutation({
     mutationFn: async ({ query, filters }: { query: string; filters: DomainFilters }) => {
-      const response = await apiRequest('POST', '/api/domains/generate', { query, filters });
+      const response = await apiRequest('/api/domains/generate', {
+        method: 'POST',
+        body: JSON.stringify({ query, filters }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate domains');
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
@@ -58,14 +83,47 @@ export default function DomainSearchForm({
     if (!searchQuery.trim()) {
       toast({
         title: "Search Query Required",
-        description: "Please enter keywords to search for domains.",
+        description: "Please enter keywords or a domain name to search.",
         variant: "destructive",
       });
       return;
     }
-    
+
+    setIsSearching(true);
     onSearch(searchQuery);
-    generateDomainsMutation.mutate({ query: searchQuery, filters });
+    
+    // Check if it's an exact domain search (contains a dot and valid extension)
+    const isExactDomain = searchQuery.includes('.') && 
+      (searchQuery.endsWith('.com') || searchQuery.endsWith('.net') || 
+       searchQuery.endsWith('.org') || searchQuery.endsWith('.io') ||
+       searchQuery.endsWith('.co') || searchQuery.endsWith('.tech') ||
+       searchQuery.endsWith('.app') || searchQuery.endsWith('.dev') ||
+       searchQuery.endsWith('.ai') || searchQuery.endsWith('.xyz') ||
+       searchQuery.endsWith('.me') || searchQuery.endsWith('.info'));
+
+    if (isExactDomain) {
+      exactSearchMutation.mutate(searchQuery, {
+        onSuccess: (data) => {
+          onResults([data.domain]);
+          setIsSearching(false);
+          toast({
+            title: "Domain Check Complete",
+            description: `${data.domain.name} is ${data.domain.isAvailable ? 'available' : 'not available'}`,
+          });
+        },
+        onError: (error) => {
+          console.error('Exact domain check failed:', error);
+          setIsSearching(false);
+          toast({
+            title: "Domain Check Failed",
+            description: "Unable to check domain. Please try again.",
+            variant: "destructive",
+          });
+        },
+      });
+    } else {
+      generateDomainsMutation.mutate({ query: searchQuery, filters });
+    }
   };
 
   const handleGenerateSearch = () => {
@@ -89,7 +147,7 @@ export default function DomainSearchForm({
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
           <Input
             type="text"
-            placeholder="Enter keywords (e.g., tech startup, creative agency)"
+            placeholder="Enter keywords or exact domain (e.g., 'mycompany.com' or 'tech startup')"
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             className="w-full pl-12 pr-4 py-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-colors h-14"

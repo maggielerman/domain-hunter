@@ -234,6 +234,56 @@ async function checkMultipleDomains(domains: string[]): Promise<DomainAvailabili
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Generate domains based on keywords
+  // Single domain availability check endpoint
+  app.post("/api/domains/check", async (req, res) => {
+    try {
+      const { domain } = req.body;
+      
+      if (!domain || typeof domain !== 'string') {
+        return res.status(400).json({ error: "Domain is required" });
+      }
+      
+      // Check if domain already exists in storage
+      const existingDomain = await storage.getDomainByName(domain);
+      if (existingDomain) {
+        return res.json({ domain: existingDomain });
+      }
+      
+      // Check availability
+      const availabilityResult = await checkDomainAvailability(domain);
+      const extension = domain.substring(domain.lastIndexOf('.'));
+      
+      // Get pricing from all registrars
+      const registrarPricing = getRegistrarPricing(domain, extension);
+      
+      // Get cheapest price
+      const prices = Object.values(registrarPricing).map((r: any) => r.price);
+      const cheapestPrice = prices.length > 0 ? Math.min(...prices) : parseFloat(availabilityResult.price || '19.99');
+      const finalPrice = availabilityResult.price || cheapestPrice.toString();
+      const isPremium = availabilityResult.premium || parseFloat(finalPrice) > 30;
+      
+      // Create domain record
+      const domainRecord = await storage.createDomain({
+        name: domain,
+        extension,
+        price: finalPrice,
+        isAvailable: availabilityResult.available,
+        isPremium,
+        registrar: availabilityResult.registrar || 'Multiple',
+        affiliateLink: registrarPricing[Object.keys(registrarPricing)[0]]?.affiliateLink,
+        registrarPricing,
+        description: `Direct search for ${domain}`,
+        tags: [domain.substring(0, domain.lastIndexOf('.'))],
+        length: domain.length,
+      });
+      
+      res.json({ domain: domainRecord });
+    } catch (error) {
+      console.error("Domain check error:", error);
+      res.status(500).json({ error: "Failed to check domain availability" });
+    }
+  });
+
   app.post("/api/domains/generate", async (req, res) => {
     try {
       const { query, filters } = req.body;
