@@ -11,6 +11,7 @@ export const domains = pgTable("domains", {
   isPremium: boolean("is_premium").notNull().default(false),
   registrar: text("registrar").notNull(),
   affiliateLink: text("affiliate_link"),
+  registrarPricing: jsonb("registrar_pricing"), // Store all registrar prices
   description: text("description"),
   tags: text("tags").array(),
   length: serial("length").notNull(),
@@ -32,6 +33,11 @@ export const insertDomainSchema = createInsertSchema(domains).omit({
   length: z.number().optional(),
   isAvailable: z.boolean().optional(),
   isPremium: z.boolean().optional(),
+  registrarPricing: z.record(z.object({
+    price: z.number(),
+    affiliateLink: z.string(),
+    logo: z.string()
+  })).optional(),
 });
 
 export const insertSearchSchema = createInsertSchema(searches).omit({

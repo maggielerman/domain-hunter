@@ -45,6 +45,7 @@ export class MemStorage implements IStorage {
       isPremium: insertDomain.isPremium ?? false,
       registrar: insertDomain.registrar,
       affiliateLink: insertDomain.affiliateLink || null,
+      registrarPricing: insertDomain.registrarPricing || null,
       description: insertDomain.description || null,
       tags: insertDomain.tags || null,
       length: insertDomain.length || insertDomain.name.length,

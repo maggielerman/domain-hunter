@@ -1,9 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Star, Ruler, Tags, Calendar, ExternalLink } from "lucide-react";
+import { Heart, Star, Ruler, Tags, Calendar, ExternalLink, ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import DomainAvailabilityBadge from "./domain-availability-badge";
+import RegistrarPricing from "./registrar-pricing";
 import type { Domain } from "@shared/schema";
 
 interface DomainCardProps {
@@ -12,6 +14,7 @@ interface DomainCardProps {
 
 export default function DomainCard({ domain }: DomainCardProps) {
   const { toast } = useToast();
+  const [showRegistrars, setShowRegistrars] = useState(false);
 
   const handlePurchase = () => {
     if (domain.affiliateLink && domain.isAvailable) {
@@ -137,37 +140,54 @@ export default function DomainCard({ domain }: DomainCardProps) {
               )}
             </div>
             
-            <div className="flex space-x-2">
-              {domain.isAvailable ? (
+            <div className="flex flex-col space-y-2">
+              <div className="flex space-x-2">
+                {domain.isAvailable ? (
+                  <>
+                    <Button
+                      onClick={handlePurchase}
+                      className={
+                        domain.isPremium
+                          ? "bg-amber-500 text-white hover:bg-amber-600"
+                          : "bg-brand-500 text-white hover:bg-brand-600"
+                      }
+                    >
+                      <ExternalLink className="mr-1 h-4 w-4" />
+                      {domain.isPremium ? 'Buy Premium' : 'Buy Now'}
+                    </Button>
+                    
+                    {domain.registrarPricing && Object.keys(domain.registrarPricing).length > 1 && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowRegistrars(!showRegistrars)}
+                        className="hover:bg-slate-200"
+                      >
+                        <ChevronDown className={`mr-1 h-4 w-4 transition-transform ${showRegistrars ? 'rotate-180' : ''}`} />
+                        Compare Prices
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <Button disabled variant="secondary">
+                    Unavailable
+                  </Button>
+                )}
+                
                 <Button
-                  onClick={handlePurchase}
-                  className={
-                    domain.isPremium
-                      ? "bg-amber-500 text-white hover:bg-amber-600"
-                      : "bg-brand-500 text-white hover:bg-brand-600"
-                  }
+                  variant="outline"
+                  size="icon"
+                  onClick={handleFavorite}
+                  className="hover:bg-slate-200"
                 >
-                  <ExternalLink className="mr-1 h-4 w-4" />
-                  {domain.isPremium ? 'Buy Premium' : 'Buy Now'}
+                  <Heart className="h-4 w-4" />
                 </Button>
-              ) : (
-                <Button disabled variant="secondary">
-                  Unavailable
-                </Button>
-              )}
-              
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleFavorite}
-                className="hover:bg-slate-200"
-              >
-                <Heart className="h-4 w-4" />
-              </Button>
+              </div>
             </div>
           </div>
         </div>
       </CardContent>
+      
+      {showRegistrars && <RegistrarPricing domain={domain} />}
     </Card>
   );
 }

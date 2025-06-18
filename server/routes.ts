@@ -22,10 +22,36 @@ const EXTENSIONS = [
 ];
 
 const REGISTRARS = [
-  { name: 'GoDaddy', affiliate: 'https://www.godaddy.com/domains/domain-name-search?domainToCheck=' },
-  { name: 'Namecheap', affiliate: 'https://www.namecheap.com/domains/registration/results/?domain=' },
-  { name: 'Hover', affiliate: 'https://hover.com/domains/results?utf8=✓&domain-name=' },
-  { name: 'Porkbun', affiliate: 'https://porkbun.com/checkout/search?q=' },
+  { 
+    name: 'GoDaddy', 
+    affiliate: 'https://www.godaddy.com/domains/domain-name-search?domainToCheck=',
+    logo: 'godaddy',
+    pricing: { '.com': 17.99, '.net': 19.99, '.org': 19.99, '.io': 59.99 }
+  },
+  { 
+    name: 'Namecheap', 
+    affiliate: 'https://www.namecheap.com/domains/registration/results/?domain=',
+    logo: 'namecheap', 
+    pricing: { '.com': 13.98, '.net': 15.98, '.org': 14.98, '.io': 48.88 }
+  },
+  { 
+    name: 'Hover', 
+    affiliate: 'https://hover.com/domains/results?utf8=✓&domain-name=',
+    logo: 'hover',
+    pricing: { '.com': 15.99, '.net': 17.99, '.org': 16.99, '.io': 79.00 }
+  },
+  { 
+    name: 'Porkbun', 
+    affiliate: 'https://porkbun.com/checkout/search?q=',
+    logo: 'porkbun',
+    pricing: { '.com': 10.73, '.net': 11.98, '.org': 11.98, '.io': 56.00 }
+  },
+  {
+    name: 'Google Domains',
+    affiliate: 'https://domains.google.com/registrar/search?searchTerm=',
+    logo: 'google',
+    pricing: { '.com': 12.00, '.net': 12.00, '.org': 12.00, '.io': 60.00 }
+  }
 ];
 
 // Domain availability checking using multiple methods
@@ -265,8 +291,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const availabilityResult = availabilityResults[i];
         const registrar = REGISTRARS[Math.floor(Math.random() * REGISTRARS.length)];
         
-        // Use API price if available, otherwise use default
-        const finalPrice = availabilityResult.price || domainInfo.price;
+        // Get pricing from all registrars for this extension
+        const registrarPricing: Record<string, any> = {};
+        REGISTRARS.forEach(reg => {
+          const extensionPrice = reg.pricing[domainInfo.extension];
+          if (extensionPrice) {
+            registrarPricing[reg.name] = {
+              price: extensionPrice,
+              affiliateLink: `${reg.affiliate}${domainInfo.name}`,
+              logo: reg.logo
+            };
+          }
+        });
+
+        // Use API price if available, otherwise use cheapest registrar price
+        const cheapestPrice = Math.min(...Object.values(registrarPricing).map((r: any) => r.price));
+        const finalPrice = availabilityResult.price || cheapestPrice.toString();
         const isPremium = availabilityResult.premium || parseFloat(finalPrice) > 30;
         
         const domain = await storage.createDomain({
@@ -275,8 +315,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: finalPrice,
           isAvailable: availabilityResult.available,
           isPremium,
-          registrar: availabilityResult.registrar || registrar.name,
-          affiliateLink: `${registrar.affiliate}${domainInfo.name}`,
+          registrar: availabilityResult.registrar || 'Multiple',
+          affiliateLink: registrarPricing[Object.keys(registrarPricing)[0]]?.affiliateLink,
+          registrarPricing,
           description: `Perfect for ${keywords.join(', ')} related businesses`,
           tags: keywords,
           length: domainInfo.name.length,
