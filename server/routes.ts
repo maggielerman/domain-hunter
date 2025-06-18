@@ -98,9 +98,10 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
   const extension = domain.substring(domain.lastIndexOf('.'));
   const basePrice = EXTENSIONS.find(ext => ext.ext === extension)?.price || '19.99';
   
-  // Try WHOIS API via RapidAPI
+  // Try WHOIS API via RapidAPI for real data
   if (process.env.RAPIDAPI_KEY) {
     try {
+      // Try the correct WHOIS API endpoint
       const response = await axios.get(`https://whois-api.p.rapidapi.com/whois`, {
         timeout: 8000,
         params: { domain },
@@ -124,35 +125,22 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
         };
       }
     } catch (apiError: any) {
+      // If rate limited or API down, we should inform the user
+      if (apiError.response?.status === 429) {
+        console.log(`Rate limited for ${domain}, waiting before retry...`);
+        return {
+          domain,
+          available: false,
+          registrar: 'Rate Limited - Check Manually',
+          price: undefined,
+          premium: false
+        };
+      }
       console.log(`WHOIS API check failed for ${domain}: ${apiError.message}`);
-      // Continue to fallback method below
     }
   }
 
-  // Try free domain info API as secondary option
-  try {
-    const response = await axios.get(`https://domainsdb.info/api/v1/info/domain/${domain}`, {
-      timeout: 5000
-    });
-    
-    if (response.data && response.data.domain) {
-      const isRegistered = response.data.domain.isDead === false || 
-                          response.data.domain.A?.length > 0 ||
-                          response.data.domain.NS?.length > 0;
-      
-      return {
-        domain,
-        available: !isRegistered,
-        registrar: isRegistered ? 'Registered (DB)' : 'Available',
-        price: !isRegistered ? basePrice : undefined,
-        premium: !isRegistered && parseFloat(basePrice) > 30
-      };
-    }
-  } catch (error) {
-    console.log(`DomainsDB check failed for ${domain}`);
-  }
-
-  // DNS-based availability check as main fallback
+  // DNS-based availability check as fallback (this is real data)
   try {
     const dns = await import('dns');
     const { promisify } = await import('util');
@@ -161,7 +149,7 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
     
     let hasRecords = false;
     
-    // Check multiple DNS record types
+    // Check multiple DNS record types - this gives real availability info
     try {
       await resolve(domain, 'A');
       hasRecords = true;
@@ -178,7 +166,7 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
             await resolve(domain, 'NS');
             hasRecords = true;
           } catch (e) {
-            // No DNS records found
+            // No DNS records found - likely available
           }
         }
       }
@@ -187,7 +175,7 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
     return {
       domain,
       available: !hasRecords,
-      registrar: hasRecords ? 'Registered (DNS)' : 'Available',
+      registrar: hasRecords ? 'Registered (DNS Verified)' : 'Check with Registrar',
       price: !hasRecords ? basePrice : undefined,
       premium: !hasRecords && parseFloat(basePrice) > 30
     };
@@ -196,23 +184,13 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
     console.log(`DNS check failed for ${domain}: ${error}`);
   }
 
-  // Smart fallback based on domain characteristics - be more lenient
-  const domainName = domain.substring(0, domain.lastIndexOf('.'));
-  const isShort = domainName.length <= 4;
-  const hasNumbers = /\d/.test(domainName);
-  const hasHyphens = domainName.includes('-');
-  const isVeryLong = domainName.length > 15;
-  const hasSpecialPatterns = /[0-9]{2,}|[a-z]{3,}[0-9]+/.test(domainName);
-  
-  // More optimistic availability for generated domains
-  const likelyAvailable = hasNumbers || hasHyphens || isVeryLong || hasSpecialPatterns;
-  
+  // If all methods fail, return unknown status
   return {
     domain,
-    available: likelyAvailable,
-    registrar: likelyAvailable ? 'Available (Estimated)' : 'Check Manually',
-    price: likelyAvailable ? basePrice : undefined,
-    premium: likelyAvailable && parseFloat(basePrice) > 30
+    available: false,
+    registrar: 'Unknown - Check Manually',
+    price: undefined,
+    premium: false
   };
 }
 
@@ -337,6 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: string;
         variation: string;
         isAvailable: boolean;
+        registrarStatus: string;
       }> = [];
 
       console.log(`Generating domains for keywords: ${keywords.join(', ')}`);
@@ -358,30 +337,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const domainName = `${variation}${ext}`;
           
-          // Smart availability estimation based on domain characteristics
-          const hasNumbers = /\d/.test(variation);
-          const hasHyphens = variation.includes('-');
-          const isLong = variation.length > 12;
-          const hasCommonWords = ['app', 'web', 'site', 'tech', 'pro', 'hub'].some(word => 
-            variation.toLowerCase().includes(word)
-          );
-          const isVeryShort = variation.length <= 4;
-          const isExactKeyword = keywords.includes(variation.toLowerCase());
+          // Get real availability data for first few domains, mark others for manual check
+          let isAvailable = false;
+          let registrarStatus = 'Check Manually';
           
-          // Probability-based availability (more generous for generated domains)
-          let availabilityScore = 0.7; // Start optimistic
-          
-          if (isVeryShort) availabilityScore -= 0.6;
-          if (isExactKeyword && !hasNumbers && !hasHyphens) availabilityScore -= 0.4;
-          if (hasCommonWords && variation.length < 8) availabilityScore -= 0.3;
-          if (ext === '.com') availabilityScore -= 0.2;
-          
-          if (hasNumbers) availabilityScore += 0.2;
-          if (hasHyphens) availabilityScore += 0.3;
-          if (isLong) availabilityScore += 0.2;
-          if (ext !== '.com') availabilityScore += 0.1;
-          
-          const isAvailable = availabilityScore > 0.5;
+          if (selectedDomains.length < 5) {
+            // Only check first few to avoid rate limits
+            const availability = await checkDomainAvailability(domainName);
+            isAvailable = availability.available;
+            registrarStatus = availability.registrar || 'Unknown';
+          } else {
+            // Mark remaining domains as requiring manual verification
+            registrarStatus = 'Requires Verification';
+            isAvailable = false; // Conservative approach
+          }
           
           // Apply filters
           if (filters.availableOnly && !isAvailable) {
@@ -398,7 +367,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             extension: ext,
             price: price,
             variation,
-            isAvailable
+            isAvailable,
+            registrarStatus
           });
         }
       }
@@ -423,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: finalPrice,
           isAvailable: domainInfo.isAvailable,
           isPremium,
-          registrar: domainInfo.isAvailable ? 'Available (Generated)' : 'Check Required',
+          registrar: domainInfo.registrarStatus,
           affiliateLink,
           registrarPricing,
           description: `Generated variation of "${keywords.join(' ')}" - ${domainInfo.variation}`,
