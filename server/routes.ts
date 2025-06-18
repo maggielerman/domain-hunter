@@ -26,31 +26,31 @@ const REGISTRARS = [
     name: 'GoDaddy', 
     affiliate: 'https://www.godaddy.com/domains/domain-name-search?domainToCheck=',
     logo: 'godaddy',
-    pricing: { '.com': 17.99, '.net': 19.99, '.org': 19.99, '.io': 59.99 }
+    pricing: { '.com': 17.99, '.net': 19.99, '.org': 19.99, '.io': 59.99, '.co': 32.99, '.tech': 52.99, '.app': 19.99, '.dev': 17.99, '.ai': 89.99, '.xyz': 12.99, '.me': 19.99, '.info': 19.99 }
   },
   { 
     name: 'Namecheap', 
     affiliate: 'https://www.namecheap.com/domains/registration/results/?domain=',
     logo: 'namecheap', 
-    pricing: { '.com': 13.98, '.net': 15.98, '.org': 14.98, '.io': 48.88 }
+    pricing: { '.com': 13.98, '.net': 15.98, '.org': 14.98, '.io': 48.88, '.co': 28.88, '.tech': 48.88, '.app': 18.88, '.dev': 15.88, '.ai': 85.88, '.xyz': 8.88, '.me': 18.88, '.info': 18.88 }
   },
   { 
     name: 'Hover', 
     affiliate: 'https://hover.com/domains/results?utf8=✓&domain-name=',
     logo: 'hover',
-    pricing: { '.com': 15.99, '.net': 17.99, '.org': 16.99, '.io': 79.00 }
+    pricing: { '.com': 15.99, '.net': 17.99, '.org': 16.99, '.io': 79.00, '.co': 39.99, '.tech': 59.99, '.app': 19.99, '.dev': 17.99, '.ai': 99.99, '.xyz': 14.99, '.me': 19.99, '.info': 19.99 }
   },
   { 
     name: 'Porkbun', 
     affiliate: 'https://porkbun.com/checkout/search?q=',
     logo: 'porkbun',
-    pricing: { '.com': 10.73, '.net': 11.98, '.org': 11.98, '.io': 56.00 }
+    pricing: { '.com': 10.73, '.net': 11.98, '.org': 11.98, '.io': 56.00, '.co': 29.47, '.tech': 49.47, '.app': 16.47, '.dev': 14.47, '.ai': 81.47, '.xyz': 3.47, '.me': 16.47, '.info': 16.47 }
   },
   {
-    name: 'Google Domains',
-    affiliate: 'https://domains.google.com/registrar/search?searchTerm=',
-    logo: 'google',
-    pricing: { '.com': 12.00, '.net': 12.00, '.org': 12.00, '.io': 60.00 }
+    name: 'Squarespace',
+    affiliate: 'https://domains.squarespace.com/search?query=',
+    logo: 'squarespace',
+    pricing: { '.com': 20.00, '.net': 20.00, '.org': 20.00, '.io': 70.00, '.co': 35.00, '.tech': 60.00, '.app': 25.00, '.dev': 22.00, '.ai': 95.00, '.xyz': 15.00, '.me': 25.00, '.info': 25.00 }
   }
 ];
 

@@ -124,8 +124,8 @@ export default function Home() {
               <div className="text-sm text-slate-500 text-green-600 font-medium">From $10.73</div>
             </div>
             <div className="text-center p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-              <div className="text-lg font-bold text-slate-700">Google</div>
-              <div className="text-sm text-slate-500">From $12.00</div>
+              <div className="text-lg font-bold text-slate-700">Squarespace</div>
+              <div className="text-sm text-slate-500">From $20.00</div>
             </div>
           </div>
           <div className="text-center mt-8">
