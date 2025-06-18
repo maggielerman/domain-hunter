@@ -51,7 +51,7 @@ export const domainFiltersSchema = z.object({
   maxPrice: z.number().optional(),
   availableOnly: z.boolean().optional(),
   maxLength: z.number().optional(),
-  sortBy: z.enum(['relevance', 'price-asc', 'price-desc', 'length', 'alphabetical']).optional(),
+  sortBy: z.enum(['relevance', 'price-asc', 'price-desc', 'length', 'alphabetical', 'available-first']).optional(),
 });
 
 export type InsertDomain = z.infer<typeof insertDomainSchema>;

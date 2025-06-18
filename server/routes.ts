@@ -98,80 +98,111 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
   const extension = domain.substring(domain.lastIndexOf('.'));
   const basePrice = EXTENSIONS.find(ext => ext.ext === extension)?.price || '19.99';
   
-  // Try real domain availability check using RapidAPI
+  // Try WHOIS API via RapidAPI
   if (process.env.RAPIDAPI_KEY) {
     try {
-      const response = await axios.get(`https://domain-availability.p.rapidapi.com/v1/${domain}`, {
-        timeout: 5000,
+      const response = await axios.get(`https://whois-api.p.rapidapi.com/whois`, {
+        timeout: 8000,
+        params: { domain },
         headers: {
           'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
-          'X-RapidAPI-Host': 'domain-availability.p.rapidapi.com'
+          'X-RapidAPI-Host': 'whois-api.p.rapidapi.com'
         }
       });
 
-      if (response.data) {
+      if (response.data && response.data.domain) {
+        const isAvailable = !response.data.domain.registered || 
+                           response.data.domain.available === true ||
+                           !response.data.domain.registrar;
+        
         return {
           domain,
-          available: response.data.available || false,
-          registrar: response.data.registrar || 'Unknown',
-          price: response.data.available ? basePrice : undefined,
-          premium: response.data.premium || false
+          available: isAvailable,
+          registrar: isAvailable ? 'Available' : (response.data.domain.registrar || 'Registered'),
+          price: isAvailable ? basePrice : undefined,
+          premium: isAvailable && parseFloat(basePrice) > 30
         };
       }
     } catch (apiError: any) {
-      console.log(`RapidAPI check failed for ${domain}: ${apiError.message}`);
+      console.log(`WHOIS API check failed for ${domain}: ${apiError.message}`);
       // Continue to fallback method below
     }
   }
 
-  // Fallback: Try WHOIS-based check via other free APIs
+  // Try free domain info API as secondary option
   try {
-    // Try domain check via DNS resolution
-    const dns = require('dns');
-    const util = require('util');
-    const resolve = util.promisify(dns.resolve);
+    const response = await axios.get(`https://domainsdb.info/api/v1/info/domain/${domain}`, {
+      timeout: 5000
+    });
     
-    try {
-      await resolve(domain, 'A');
-      // Domain resolves - likely taken
+    if (response.data && response.data.domain) {
+      const isRegistered = response.data.domain.isDead === false || 
+                          response.data.domain.A?.length > 0 ||
+                          response.data.domain.NS?.length > 0;
+      
       return {
         domain,
-        available: false,
-        registrar: 'Registered (DNS)',
-        price: undefined,
-        premium: false
-      };
-    } catch (dnsError) {
-      // Domain doesn't resolve - might be available
-      return {
-        domain,
-        available: true,
-        registrar: 'Available',
-        price: basePrice,
-        premium: parseFloat(basePrice) > 30
+        available: !isRegistered,
+        registrar: isRegistered ? 'Registered (DB)' : 'Available',
+        price: !isRegistered ? basePrice : undefined,
+        premium: !isRegistered && parseFloat(basePrice) > 30
       };
     }
   } catch (error) {
-    console.log(`DNS check failed for ${domain}`);
+    console.log(`DomainsDB check failed for ${domain}`);
   }
 
-  // Final fallback - conservative estimate based on domain patterns
-  const domainName = domain.substring(0, domain.lastIndexOf('.'));
-  const isShort = domainName.length <= 4;
-  const hasNumbers = /\d/.test(domainName);
-  const hasHyphens = domainName.includes('-');
-  
-  // Conservative approach - assume most domains are taken
-  const likelyAvailable = (hasNumbers && domainName.length > 8) || 
-                         (hasHyphens && domainName.length > 10) ||
-                         (domainName.length > 15);
-  
+  // DNS-based availability check as main fallback
+  try {
+    const dns = require('dns');
+    const util = require('util');
+    const resolve = util.promisify(dns.resolve);
+    const resolveMx = util.promisify(dns.resolveMx);
+    
+    let hasRecords = false;
+    
+    // Check multiple DNS record types
+    try {
+      await resolve(domain, 'A');
+      hasRecords = true;
+    } catch (e) {
+      try {
+        await resolve(domain, 'AAAA');
+        hasRecords = true;
+      } catch (e) {
+        try {
+          await resolveMx(domain);
+          hasRecords = true;
+        } catch (e) {
+          try {
+            await resolve(domain, 'NS');
+            hasRecords = true;
+          } catch (e) {
+            // No DNS records found
+          }
+        }
+      }
+    }
+    
+    return {
+      domain,
+      available: !hasRecords,
+      registrar: hasRecords ? 'Registered (DNS)' : 'Available',
+      price: !hasRecords ? basePrice : undefined,
+      premium: !hasRecords && parseFloat(basePrice) > 30
+    };
+    
+  } catch (error) {
+    console.log(`DNS check failed for ${domain}: ${error}`);
+  }
+
+  // Final fallback - return as likely unavailable for safety
   return {
     domain,
-    available: likelyAvailable,
-    registrar: likelyAvailable ? 'Available (Estimated)' : 'Likely Registered',
-    price: likelyAvailable ? basePrice : undefined,
-    premium: likelyAvailable && parseFloat(basePrice) > 30
+    available: false,
+    registrar: 'Check Manually',
+    price: undefined,
+    premium: false
   };
 }
 
