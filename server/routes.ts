@@ -254,43 +254,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const variations = generateDomainVariations(keywords);
       const domains = [];
 
-      // Create list of all domains to check
-      const domainsToCheck: string[] = [];
-      const domainData: Array<{
+      // Determine target extensions based on filters
+      const targetExtensions = filters.extensions && filters.extensions.length > 0 
+        ? EXTENSIONS.filter(ext => filters.extensions.includes(ext.ext))
+        : EXTENSIONS;
+
+      // Smart domain generation with filtering
+      const targetCount = 50;
+      let selectedDomains: Array<{
         name: string;
         extension: string;
         price: string;
         variation: string;
       }> = [];
 
-      // Limit variations to prevent too many API calls and rate limits
-      const limitedVariations = variations.slice(0, 5);
-      
-      for (const variation of limitedVariations) {
-        for (const { ext, price } of EXTENSIONS) {
+      console.log(`Generating domains for keywords: ${keywords.join(', ')}`);
+      console.log(`Filters: availableOnly=${filters.availableOnly}, extensions=${JSON.stringify(filters.extensions)}`);
+
+      // Generate domains iteratively, checking availability as we go
+      for (const variation of variations) {
+        if (selectedDomains.length >= targetCount) break;
+        
+        for (const { ext, price } of targetExtensions) {
+          if (selectedDomains.length >= targetCount) break;
+          
           const domainName = `${variation}${ext}`;
-          domainsToCheck.push(domainName);
-          domainData.push({
+          const availability = await checkDomainAvailability(domainName);
+          
+          // Apply filters during generation
+          if (filters.availableOnly && !availability.available) {
+            continue; // Skip unavailable domains if only available requested
+          }
+          
+          // Apply price filters
+          const domainPrice = parseFloat(availability.price || price);
+          if (filters.minPrice && domainPrice < filters.minPrice) continue;
+          if (filters.maxPrice && domainPrice > filters.maxPrice) continue;
+          
+          selectedDomains.push({
             name: domainName,
             extension: ext,
-            price,
+            price: availability.price || price,
             variation
           });
         }
       }
 
-      console.log(`Checking availability for ${domainsToCheck.length} domains...`);
+      console.log(`Selected ${selectedDomains.length} domains after filtering`);
       
-      // Check domains quickly without external API calls
+      // Get final availability results for selected domains (re-check for consistency)
       const availabilityResults = await Promise.all(
-        domainsToCheck.map(domain => checkDomainAvailability(domain))
+        selectedDomains.map(domain => checkDomainAvailability(domain.name))
       );
       
       // Create domain records with availability data
-      for (let i = 0; i < domainData.length; i++) {
-        const domainInfo = domainData[i];
+      for (let i = 0; i < selectedDomains.length; i++) {
+        const domainInfo = selectedDomains[i];
         const availabilityResult = availabilityResults[i];
-        const randomConfig = AFFILIATE_CONFIGS[Math.floor(Math.random() * AFFILIATE_CONFIGS.length)];
         
         // Get pricing and affiliate links from all registrars for this extension
         const registrarPricing = getRegistrarPricing(domainInfo.name, domainInfo.extension);
@@ -307,12 +327,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: finalPrice,
           isAvailable: availabilityResult.available,
           isPremium,
-          registrar: availabilityResult.registrar || randomConfig.name,
+          registrar: availabilityResult.registrar || 'Available',
           affiliateLink: registrarPricing[Object.keys(registrarPricing)[0]]?.affiliateLink,
           registrarPricing,
-          description: `Perfect for ${keywords.join(', ')} related businesses`,
+          description: `Generated from keywords: ${keywords.join(', ')}`,
           tags: keywords,
-          length: domainInfo.name.length,
+          length: domainInfo.name.replace(domainInfo.extension, '').length,
         });
         
         domains.push(domain);
