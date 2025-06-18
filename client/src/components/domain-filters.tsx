@@ -51,14 +51,15 @@ export default function DomainFilters({ filters, onFiltersChange }: DomainFilter
 
   return (
     <aside className="w-full lg:w-80 lg:flex-shrink-0">
-      <Card className="lg:sticky lg:top-24 max-h-screen lg:overflow-y-auto">
-        <CardHeader>
+      <Card className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-6rem)]">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="flex items-center">
             <Filter className="mr-2 h-5 w-5 text-brand-500" />
             Filter Results
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 lg:overflow-y-auto lg:max-h-[calc(100vh-12rem)] lg:pr-2">
+          <div className="space-y-6">
           {/* Domain Extensions */}
           <div>
             <h4 className="font-medium text-slate-900 mb-3">Domain Extensions</h4>
@@ -151,14 +152,15 @@ export default function DomainFilters({ filters, onFiltersChange }: DomainFilter
             </Select>
           </div>
 
-          {/* Clear Filters */}
-          <Button
-            variant="outline"
-            onClick={clearAllFilters}
-            className="w-full text-brand-500 border-brand-500 hover:bg-brand-50"
-          >
-            Clear All Filters
-          </Button>
+            {/* Clear Filters */}
+            <Button
+              variant="outline"
+              onClick={clearAllFilters}
+              className="w-full text-brand-500 border-brand-500 hover:bg-brand-50"
+            >
+              Clear All Filters
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </aside>
