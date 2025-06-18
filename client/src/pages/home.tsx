@@ -101,24 +101,37 @@ export default function Home() {
       <section className="bg-white py-16 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-slate-900 mb-4">Trusted Domain Registrar Partners</h3>
+            <h3 className="text-2xl font-bold text-slate-900 mb-4">Compare Prices Across Multiple Registrars</h3>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Purchase domains through our verified partners with competitive pricing and excellent customer support.
+              We show you prices from all major registrars so you can find the best deal for your domain.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-60">
-            <div className="text-center p-6 bg-slate-50 rounded-xl">
-              <div className="text-2xl font-bold text-slate-600">GoDaddy</div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 items-center">
+            <div className="text-center p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+              <div className="text-lg font-bold text-slate-700">GoDaddy</div>
+              <div className="text-sm text-slate-500">From $17.99</div>
             </div>
-            <div className="text-center p-6 bg-slate-50 rounded-xl">
-              <div className="text-2xl font-bold text-slate-600">Namecheap</div>
+            <div className="text-center p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+              <div className="text-lg font-bold text-slate-700">Namecheap</div>
+              <div className="text-sm text-slate-500">From $13.98</div>
             </div>
-            <div className="text-center p-6 bg-slate-50 rounded-xl">
-              <div className="text-2xl font-bold text-slate-600">Google Domains</div>
+            <div className="text-center p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+              <div className="text-lg font-bold text-slate-700">Hover</div>
+              <div className="text-sm text-slate-500">From $15.99</div>
             </div>
-            <div className="text-center p-6 bg-slate-50 rounded-xl">
-              <div className="text-2xl font-bold text-slate-600">Hover</div>
+            <div className="text-center p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+              <div className="text-lg font-bold text-slate-700">Porkbun</div>
+              <div className="text-sm text-slate-500 text-green-600 font-medium">From $10.73</div>
             </div>
+            <div className="text-center p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+              <div className="text-lg font-bold text-slate-700">Google</div>
+              <div className="text-sm text-slate-500">From $12.00</div>
+            </div>
+          </div>
+          <div className="text-center mt-8">
+            <p className="text-sm text-slate-500">
+              Click "Compare Prices" on any available domain to see all registrar options with direct purchase links.
+            </p>
           </div>
         </div>
       </section>

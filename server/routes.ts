@@ -294,7 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get pricing from all registrars for this extension
         const registrarPricing: Record<string, any> = {};
         REGISTRARS.forEach(reg => {
-          const extensionPrice = reg.pricing[domainInfo.extension];
+          const extensionPrice = (reg.pricing as any)[domainInfo.extension];
           if (extensionPrice) {
             registrarPricing[reg.name] = {
               price: extensionPrice,
@@ -305,7 +305,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Use API price if available, otherwise use cheapest registrar price
-        const cheapestPrice = Math.min(...Object.values(registrarPricing).map((r: any) => r.price));
+        const prices = Object.values(registrarPricing).map((r: any) => r.price);
+        const cheapestPrice = prices.length > 0 ? Math.min(...prices) : parseFloat(domainInfo.price);
         const finalPrice = availabilityResult.price || cheapestPrice.toString();
         const isPremium = availabilityResult.premium || parseFloat(finalPrice) > 30;
         
