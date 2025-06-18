@@ -322,7 +322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate domain variations
       const variations = generateDomainVariations(keywords);
-      const domains = [];
+      const allDomains = [];
 
       // Determine target extensions based on filters
       const targetExtensions = filters.extensions && filters.extensions.length > 0 
@@ -425,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isPremium,
           registrar: domainInfo.isAvailable ? 'Available (Generated)' : 'Check Required',
           affiliateLink,
-          registrarPricing: JSON.stringify(registrarPricing),
+          registrarPricing,
           description: `Generated variation of "${keywords.join(' ')}" - ${domainInfo.variation}`,
           tags: [...keywords, domainInfo.variation],
           length: domainInfo.name.length
@@ -438,10 +438,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createSearch({
         query,
         filters: filters || {},
-        resultsCount: domains.length,
+        resultsCount: generatedDomains.length,
       });
 
-      res.json({ domains, total: domains.length });
+      res.json({ domains: generatedDomains, total: generatedDomains.length });
     } catch (error) {
       console.error('Domain generation error:', error);
       res.status(500).json({ message: "Failed to generate domains" });
