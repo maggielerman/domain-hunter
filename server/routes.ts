@@ -68,8 +68,33 @@ function generateDomainVariations(keywords: string[]): string[] {
 }
 
 async function checkDomainAvailability(domain: string): Promise<DomainAvailabilityResult> {
+  // Method 1: Use RapidAPI for accurate domain availability if API key is available
+  if (process.env.RAPIDAPI_KEY) {
+    try {
+      const response = await axios.get(`https://domain-availability.p.rapidapi.com/v1/${domain}`, {
+        timeout: 5000,
+        headers: {
+          'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+          'X-RapidAPI-Host': 'domain-availability.p.rapidapi.com'
+        }
+      });
+
+      if (response.data) {
+        return {
+          domain,
+          available: response.data.available || false,
+          registrar: response.data.registrar || 'Unknown',
+          price: response.data.price,
+          premium: response.data.premium || false
+        };
+      }
+    } catch (apiError) {
+      console.log(`RapidAPI check failed for ${domain}:`, (apiError as any).message);
+    }
+  }
+
+  // Method 2: Check using DomainsDB API for existing domain records
   try {
-    // Method 1: Check using DomainsDB API for existing domain records
     const domainsDbResponse = await axios.get(PUBLIC_DOMAIN_API, {
       params: {
         domain: domain.replace(/\.[^.]+$/, ''), // Remove TLD for search
@@ -95,8 +120,8 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
     console.log(`DomainsDB check failed for ${domain}`);
   }
 
+  // Method 3: HTTP/HTTPS response check
   try {
-    // Method 2: Simple HTTP check to see if domain responds
     const response = await axios.get(`http://${domain}`, { 
       timeout: 2000,
       validateStatus: () => true // Accept any status code
@@ -122,7 +147,22 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
         registrar: 'Active Website (HTTPS)'
       };
     } catch (httpsError) {
-      // No HTTP/HTTPS response - likely available or parked
+      // No HTTP/HTTPS response - likely available
+      // Use some heuristics based on common patterns
+      const commonTaken = [
+        'google.com', 'facebook.com', 'youtube.com', 'amazon.com', 'twitter.com',
+        'instagram.com', 'linkedin.com', 'netflix.com', 'apple.com', 'microsoft.com'
+      ];
+      
+      if (commonTaken.includes(domain.toLowerCase())) {
+        return {
+          domain,
+          available: false,
+          registrar: 'Well-known Domain'
+        };
+      }
+
+      // Default to available if no other indicators
       return {
         domain,
         available: true

@@ -48,7 +48,7 @@ export default function Home() {
             <span className="text-brand-500"> Domain Name</span>
           </h2>
           <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto">
-            Generate creative domain names, check availability instantly, and secure your online presence with trusted registrars.
+            Generate creative domain names, check real-time availability, and secure your online presence with trusted registrars.
           </p>
 
           <DomainSearchForm

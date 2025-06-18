@@ -16,8 +16,8 @@ export default function DomainCard({ domain }: DomainCardProps) {
   const handlePurchase = () => {
     if (domain.affiliateLink && domain.isAvailable) {
       // Track affiliate click for analytics
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'affiliate_click', {
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'affiliate_click', {
           domain_name: domain.name,
           registrar: domain.registrar,
           price: domain.price

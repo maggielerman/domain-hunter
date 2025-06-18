@@ -36,9 +36,10 @@ export default function DomainSearchForm({
     onSuccess: (data) => {
       onResults(data.domains);
       setIsSearching(false);
+      const availableCount = data.domains.filter((d: any) => d.isAvailable).length;
       toast({
         title: "Search Complete",
-        description: `Found ${data.total} domain suggestions`,
+        description: `Found ${availableCount} available domains out of ${data.total} suggestions`,
       });
     },
     onError: (error) => {
