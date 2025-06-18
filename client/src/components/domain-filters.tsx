@@ -20,6 +20,10 @@ const EXTENSIONS = [
   { ext: '.tech', price: '$49.99' },
   { ext: '.app', price: '$19.99' },
   { ext: '.dev', price: '$17.99' },
+  { ext: '.ai', price: '$89.99' },
+  { ext: '.xyz', price: '$2.99' },
+  { ext: '.me', price: '$19.99' },
+  { ext: '.info', price: '$19.99' },
 ];
 
 export default function DomainFilters({ filters, onFiltersChange }: DomainFiltersProps) {

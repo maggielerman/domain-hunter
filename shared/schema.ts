@@ -13,7 +13,7 @@ export const domains = pgTable("domains", {
   affiliateLink: text("affiliate_link"),
   description: text("description"),
   tags: text("tags").array(),
-  length: serial("length").notNull().default(0),
+  length: serial("length").notNull(),
   checkedAt: timestamp("checked_at").defaultNow(),
 });
 
@@ -28,6 +28,10 @@ export const searches = pgTable("searches", {
 export const insertDomainSchema = createInsertSchema(domains).omit({
   id: true,
   checkedAt: true,
+}).extend({
+  length: z.number().optional(),
+  isAvailable: z.boolean().optional(),
+  isPremium: z.boolean().optional(),
 });
 
 export const insertSearchSchema = createInsertSchema(searches).omit({

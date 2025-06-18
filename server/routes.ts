@@ -28,9 +28,9 @@ const REGISTRARS = [
   { name: 'Porkbun', affiliate: 'https://porkbun.com/checkout/search?q=' },
 ];
 
-// WHOIS API configuration
-const WHOIS_API_URL = 'https://whois-api.p.rapidapi.com/api/v1/whois';
-const DOMAIN_API_URL = 'https://domain-availability-api.vercel.app/api/v1/';
+// Domain availability checking using multiple methods
+const RAPIDAPI_DOMAIN_URL = 'https://domain-availability.p.rapidapi.com/v1/';
+const PUBLIC_DOMAIN_API = 'https://api.domainsdb.info/v1/domains/search';
 
 interface DomainAvailabilityResult {
   domain: string;
@@ -69,48 +69,65 @@ function generateDomainVariations(keywords: string[]): string[] {
 
 async function checkDomainAvailability(domain: string): Promise<DomainAvailabilityResult> {
   try {
-    // First try with a free domain availability API
-    const response = await axios.get(`${DOMAIN_API_URL}${domain}`, {
-      timeout: 5000,
+    // Method 1: Check using DomainsDB API for existing domain records
+    const domainsDbResponse = await axios.get(PUBLIC_DOMAIN_API, {
+      params: {
+        domain: domain.replace(/\.[^.]+$/, ''), // Remove TLD for search
+        zone: domain.split('.').pop() // Get TLD
+      },
+      timeout: 3000,
       headers: {
         'User-Agent': 'DomainFinder/1.0'
       }
     });
-    
-    if (response.data && typeof response.data.available === 'boolean') {
-      return {
-        domain,
-        available: response.data.available,
-        registrar: response.data.registrar,
-        price: response.data.price,
-        premium: response.data.premium || false
-      };
+
+    if (domainsDbResponse.data && domainsDbResponse.data.domains) {
+      const exactMatch = domainsDbResponse.data.domains.find((d: any) => d.domain === domain);
+      if (exactMatch) {
+        return {
+          domain,
+          available: false,
+          registrar: 'Registered'
+        };
+      }
     }
   } catch (error) {
-    console.log(`API check failed for ${domain}, using fallback method`);
+    console.log(`DomainsDB check failed for ${domain}`);
   }
 
-  // Fallback: Use DNS lookup method
   try {
-    const dns = await import('dns');
-    const { promisify } = await import('util');
-    const resolve = promisify(dns.resolve);
+    // Method 2: Simple HTTP check to see if domain responds
+    const response = await axios.get(`http://${domain}`, { 
+      timeout: 2000,
+      validateStatus: () => true // Accept any status code
+    });
     
-    // Try to resolve the domain
-    await resolve(domain, 'A');
-    // If it resolves, domain is likely taken
+    // If we get any response, domain is likely active/taken
     return {
       domain,
       available: false,
-      registrar: 'Unknown'
+      registrar: 'Active Website'
     };
-  } catch (dnsError) {
-    // If DNS resolution fails, domain might be available
-    // But we can't be 100% sure, so we'll mark as potentially available
-    return {
-      domain,
-      available: true
-    };
+  } catch (httpError) {
+    // No HTTP response, try HTTPS
+    try {
+      const httpsResponse = await axios.get(`https://${domain}`, { 
+        timeout: 2000,
+        validateStatus: () => true
+      });
+      
+      return {
+        domain,
+        available: false,
+        registrar: 'Active Website (HTTPS)'
+      };
+    } catch (httpsError) {
+      // No HTTP/HTTPS response - likely available or parked
+      return {
+        domain,
+        available: true
+      };
+    }
   }
 }
 
@@ -168,7 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }> = [];
 
       // Limit variations to prevent too many API calls
-      const limitedVariations = variations.slice(0, 15);
+      const limitedVariations = variations.slice(0, 8);
       
       for (const variation of limitedVariations) {
         for (const { ext, price } of EXTENSIONS) {

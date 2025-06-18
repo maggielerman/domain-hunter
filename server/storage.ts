@@ -37,8 +37,17 @@ export class MemStorage implements IStorage {
   async createDomain(insertDomain: InsertDomain): Promise<Domain> {
     const id = this.currentDomainId++;
     const domain: Domain = {
-      ...insertDomain,
       id,
+      name: insertDomain.name,
+      extension: insertDomain.extension,
+      price: insertDomain.price,
+      isAvailable: insertDomain.isAvailable ?? true,
+      isPremium: insertDomain.isPremium ?? false,
+      registrar: insertDomain.registrar,
+      affiliateLink: insertDomain.affiliateLink || null,
+      description: insertDomain.description || null,
+      tags: insertDomain.tags || null,
+      length: insertDomain.length || insertDomain.name.length,
       checkedAt: new Date(),
     };
     this.domains.set(id, domain);
@@ -119,11 +128,11 @@ export class MemStorage implements IStorage {
   async createSearch(insertSearch: InsertSearch): Promise<Search> {
     const id = this.currentSearchId++;
     const search: Search = {
-      ...insertSearch,
       id,
-      createdAt: new Date(),
+      query: insertSearch.query,
       filters: insertSearch.filters || {},
       resultsCount: insertSearch.resultsCount || 0,
+      createdAt: new Date(),
     };
     this.searches.set(id, search);
     return search;

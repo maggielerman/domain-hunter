@@ -1,8 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Heart, Star, Ruler, Tags, Calendar, ExternalLink } from "lucide-react";
+import { Heart, Star, Ruler, Tags, Calendar, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import DomainAvailabilityBadge from "./domain-availability-badge";
 import type { Domain } from "@shared/schema";
 
 interface DomainCardProps {
@@ -13,12 +14,26 @@ export default function DomainCard({ domain }: DomainCardProps) {
   const { toast } = useToast();
 
   const handlePurchase = () => {
-    if (domain.affiliateLink) {
-      // Track affiliate click
+    if (domain.affiliateLink && domain.isAvailable) {
+      // Track affiliate click for analytics
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'affiliate_click', {
+          domain_name: domain.name,
+          registrar: domain.registrar,
+          price: domain.price
+        });
+      }
+      
       window.open(domain.affiliateLink, '_blank', 'noopener,noreferrer');
       toast({
         title: "Redirecting to " + domain.registrar,
-        description: "You'll be redirected to complete your domain purchase.",
+        description: "Complete your domain purchase on their secure platform.",
+      });
+    } else if (!domain.isAvailable) {
+      toast({
+        title: "Domain Not Available",
+        description: "This domain is already registered by someone else.",
+        variant: "destructive",
       });
     } else {
       toast({
@@ -36,22 +51,13 @@ export default function DomainCard({ domain }: DomainCardProps) {
     });
   };
 
-  const getAvailabilityBadge = () => {
-    if (domain.isAvailable) {
-      return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-          <CheckCircle className="mr-1 h-3 w-3" />
-          Available
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-          <XCircle className="mr-1 h-3 w-3" />
-          Taken
-        </Badge>
-      );
-    }
+  const formatPrice = (price: string) => {
+    const numPrice = parseFloat(price);
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(numPrice);
   };
 
   const cardClasses = domain.isPremium
@@ -76,7 +82,10 @@ export default function DomainCard({ domain }: DomainCardProps) {
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
               <h4 className="text-xl font-semibold text-slate-900">{domain.name}</h4>
-              {getAvailabilityBadge()}
+              <DomainAvailabilityBadge 
+                isAvailable={domain.isAvailable} 
+                registrar={domain.registrar}
+              />
             </div>
             
             {domain.description && (
@@ -117,10 +126,10 @@ export default function DomainCard({ domain }: DomainCardProps) {
               {domain.isAvailable ? (
                 <>
                   <div className="text-2xl font-bold text-slate-900">
-                    ${domain.price}
+                    {formatPrice(domain.price)}
                   </div>
                   <div className="text-sm text-slate-500">
-                    {domain.isPremium ? 'one-time' : 'per year'}
+                    {domain.isPremium ? 'one-time fee' : 'per year'}
                   </div>
                 </>
               ) : (
