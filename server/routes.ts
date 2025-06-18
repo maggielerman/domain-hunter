@@ -171,23 +171,37 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
   }
 }
 
-// Enhanced function to check multiple domains efficiently
+// Enhanced function to check multiple domains efficiently with rate limiting
 async function checkMultipleDomains(domains: string[]): Promise<DomainAvailabilityResult[]> {
-  const results = await Promise.allSettled(
-    domains.map(domain => checkDomainAvailability(domain))
-  );
+  const results: DomainAvailabilityResult[] = [];
   
-  return results.map((result, index) => {
-    if (result.status === 'fulfilled') {
-      return result.value;
-    } else {
-      console.error(`Failed to check domain ${domains[index]}:`, result.reason);
-      return {
-        domain: domains[index],
-        available: true, // Default to available if check fails
-      };
+  // Process domains in smaller batches to avoid rate limits
+  const batchSize = 3;
+  for (let i = 0; i < domains.length; i += batchSize) {
+    const batch = domains.slice(i, i + batchSize);
+    const batchResults = await Promise.allSettled(
+      batch.map(domain => checkDomainAvailability(domain))
+    );
+    
+    batchResults.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        results.push(result.value);
+      } else {
+        console.error(`Failed to check domain ${batch[index]}:`, result.reason);
+        results.push({
+          domain: batch[index],
+          available: true, // Default to available if check fails
+        });
+      }
+    });
+    
+    // Add small delay between batches to respect rate limits
+    if (i + batchSize < domains.length) {
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
-  });
+  }
+  
+  return results;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -224,8 +238,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         variation: string;
       }> = [];
 
-      // Limit variations to prevent too many API calls
-      const limitedVariations = variations.slice(0, 8);
+      // Limit variations to prevent too many API calls and rate limits
+      const limitedVariations = variations.slice(0, 5);
       
       for (const variation of limitedVariations) {
         for (const { ext, price } of EXTENSIONS) {
