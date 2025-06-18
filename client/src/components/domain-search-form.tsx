@@ -30,7 +30,7 @@ export default function DomainSearchForm({
 
   const exactSearchMutation = useMutation({
     mutationFn: async (exactDomain: string) => {
-      const response = await apiRequest('/api/domains/check', {
+      const response = await fetch('/api/domains/check', {
         method: 'POST',
         body: JSON.stringify({ domain: exactDomain }),
         headers: { 'Content-Type': 'application/json' }
@@ -46,7 +46,7 @@ export default function DomainSearchForm({
 
   const generateDomainsMutation = useMutation({
     mutationFn: async ({ query, filters }: { query: string; filters: DomainFilters }) => {
-      const response = await apiRequest('/api/domains/generate', {
+      const response = await fetch('/api/domains/generate', {
         method: 'POST',
         body: JSON.stringify({ query, filters }),
         headers: { 'Content-Type': 'application/json' }

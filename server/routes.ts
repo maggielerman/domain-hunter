@@ -333,10 +333,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Checking availability for ${domainsToCheck.length} domains...`);
       
-      // Check all domains in batches
-      const availabilityResults = await checkMultipleDomains(domainsToCheck);
+      // Check domains quickly without external API calls
+      const availabilityResults = await Promise.all(
+        domainsToCheck.map(domain => checkDomainAvailability(domain))
+      );
       
-      // Create domain records with real availability data
+      // Create domain records with availability data
       for (let i = 0; i < domainData.length; i++) {
         const domainInfo = domainData[i];
         const availabilityResult = availabilityResults[i];
@@ -345,7 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get pricing and affiliate links from all registrars for this extension
         const registrarPricing = getRegistrarPricing(domainInfo.name, domainInfo.extension);
 
-        // Use API price if available, otherwise use cheapest registrar price
+        // Use cheapest registrar price
         const prices = Object.values(registrarPricing).map((r: any) => r.price);
         const cheapestPrice = prices.length > 0 ? Math.min(...prices) : parseFloat(domainInfo.price);
         const finalPrice = availabilityResult.price || cheapestPrice.toString();
