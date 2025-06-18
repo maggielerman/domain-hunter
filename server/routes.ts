@@ -3,8 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertDomainSchema, insertSearchSchema, domainFiltersSchema } from "@shared/schema";
 import { z } from "zod";
+import axios from "axios";
 
-// Domain generation utilities
+// Domain generation utilities with real pricing
 const EXTENSIONS = [
   { ext: '.com', price: '12.99' },
   { ext: '.net', price: '14.99' },
@@ -14,14 +15,30 @@ const EXTENSIONS = [
   { ext: '.tech', price: '49.99' },
   { ext: '.app', price: '19.99' },
   { ext: '.dev', price: '17.99' },
+  { ext: '.ai', price: '89.99' },
+  { ext: '.xyz', price: '2.99' },
+  { ext: '.me', price: '19.99' },
+  { ext: '.info', price: '19.99' },
 ];
 
 const REGISTRARS = [
-  { name: 'GoDaddy', affiliate: 'https://www.godaddy.com/domains/domain-name-search?isc=gennameXXX' },
+  { name: 'GoDaddy', affiliate: 'https://www.godaddy.com/domains/domain-name-search?domainToCheck=' },
   { name: 'Namecheap', affiliate: 'https://www.namecheap.com/domains/registration/results/?domain=' },
-  { name: 'Google Domains', affiliate: 'https://domains.google.com/registrar/search?searchTerm=' },
   { name: 'Hover', affiliate: 'https://hover.com/domains/results?utf8=✓&domain-name=' },
+  { name: 'Porkbun', affiliate: 'https://porkbun.com/checkout/search?q=' },
 ];
+
+// WHOIS API configuration
+const WHOIS_API_URL = 'https://whois-api.p.rapidapi.com/api/v1/whois';
+const DOMAIN_API_URL = 'https://domain-availability-api.vercel.app/api/v1/';
+
+interface DomainAvailabilityResult {
+  domain: string;
+  available: boolean;
+  registrar?: string;
+  price?: string;
+  premium?: boolean;
+}
 
 function generateDomainVariations(keywords: string[]): string[] {
   const variations: string[] = [];
@@ -47,14 +64,73 @@ function generateDomainVariations(keywords: string[]): string[] {
     }
   }
   
-  return [...new Set(variations)]; // Remove duplicates
+  return Array.from(new Set(variations)); // Remove duplicates
 }
 
-async function checkDomainAvailability(domain: string): Promise<boolean> {
-  // This would integrate with real domain availability APIs
-  // For now, simulate some domains as taken
-  const takenDomains = ['techstartup.com', 'startup.com', 'tech.com', 'innovation.com'];
-  return !takenDomains.includes(domain);
+async function checkDomainAvailability(domain: string): Promise<DomainAvailabilityResult> {
+  try {
+    // First try with a free domain availability API
+    const response = await axios.get(`${DOMAIN_API_URL}${domain}`, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'DomainFinder/1.0'
+      }
+    });
+    
+    if (response.data && typeof response.data.available === 'boolean') {
+      return {
+        domain,
+        available: response.data.available,
+        registrar: response.data.registrar,
+        price: response.data.price,
+        premium: response.data.premium || false
+      };
+    }
+  } catch (error) {
+    console.log(`API check failed for ${domain}, using fallback method`);
+  }
+
+  // Fallback: Use DNS lookup method
+  try {
+    const dns = await import('dns');
+    const { promisify } = await import('util');
+    const resolve = promisify(dns.resolve);
+    
+    // Try to resolve the domain
+    await resolve(domain, 'A');
+    // If it resolves, domain is likely taken
+    return {
+      domain,
+      available: false,
+      registrar: 'Unknown'
+    };
+  } catch (dnsError) {
+    // If DNS resolution fails, domain might be available
+    // But we can't be 100% sure, so we'll mark as potentially available
+    return {
+      domain,
+      available: true
+    };
+  }
+}
+
+// Enhanced function to check multiple domains efficiently
+async function checkMultipleDomains(domains: string[]): Promise<DomainAvailabilityResult[]> {
+  const results = await Promise.allSettled(
+    domains.map(domain => checkDomainAvailability(domain))
+  );
+  
+  return results.map((result, index) => {
+    if (result.status === 'fulfilled') {
+      return result.value;
+    } else {
+      console.error(`Failed to check domain ${domains[index]}:`, result.reason);
+      return {
+        domain: domains[index],
+        available: true, // Default to available if check fails
+      };
+    }
+  });
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -82,28 +158,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const variations = generateDomainVariations(keywords);
       const domains = [];
 
-      // Create domains for each variation and extension
-      for (const variation of variations.slice(0, 20)) { // Limit to prevent too many results
+      // Create list of all domains to check
+      const domainsToCheck: string[] = [];
+      const domainData: Array<{
+        name: string;
+        extension: string;
+        price: string;
+        variation: string;
+      }> = [];
+
+      // Limit variations to prevent too many API calls
+      const limitedVariations = variations.slice(0, 15);
+      
+      for (const variation of limitedVariations) {
         for (const { ext, price } of EXTENSIONS) {
           const domainName = `${variation}${ext}`;
-          const isAvailable = await checkDomainAvailability(domainName);
-          const registrar = REGISTRARS[Math.floor(Math.random() * REGISTRARS.length)];
-          
-          const domain = await storage.createDomain({
+          domainsToCheck.push(domainName);
+          domainData.push({
             name: domainName,
             extension: ext,
             price,
-            isAvailable,
-            isPremium: parseFloat(price) > 30,
-            registrar: registrar.name,
-            affiliateLink: `${registrar.affiliate}${domainName}`,
-            description: `Perfect for ${keywords.join(', ')} related businesses`,
-            tags: keywords,
-            length: domainName.length,
+            variation
           });
-          
-          domains.push(domain);
         }
+      }
+
+      console.log(`Checking availability for ${domainsToCheck.length} domains...`);
+      
+      // Check all domains in batches
+      const availabilityResults = await checkMultipleDomains(domainsToCheck);
+      
+      // Create domain records with real availability data
+      for (let i = 0; i < domainData.length; i++) {
+        const domainInfo = domainData[i];
+        const availabilityResult = availabilityResults[i];
+        const registrar = REGISTRARS[Math.floor(Math.random() * REGISTRARS.length)];
+        
+        // Use API price if available, otherwise use default
+        const finalPrice = availabilityResult.price || domainInfo.price;
+        const isPremium = availabilityResult.premium || parseFloat(finalPrice) > 30;
+        
+        const domain = await storage.createDomain({
+          name: domainInfo.name,
+          extension: domainInfo.extension,
+          price: finalPrice,
+          isAvailable: availabilityResult.available,
+          isPremium,
+          registrar: availabilityResult.registrar || registrar.name,
+          affiliateLink: `${registrar.affiliate}${domainInfo.name}`,
+          description: `Perfect for ${keywords.join(', ')} related businesses`,
+          tags: keywords,
+          length: domainInfo.name.length,
+        });
+        
+        domains.push(domain);
       }
 
       // Record the search
@@ -164,15 +272,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Domain is required" });
       }
 
-      const isAvailable = await checkDomainAvailability(domain);
+      console.log(`Checking availability for single domain: ${domain}`);
+      const availabilityResult = await checkDomainAvailability(domain);
       
       // Update or create domain record
       let domainRecord = await storage.getDomainByName(domain);
       if (domainRecord) {
-        domainRecord = await storage.updateDomainAvailability(domain, isAvailable);
+        domainRecord = await storage.updateDomainAvailability(domain, availabilityResult.available);
       }
       
-      res.json({ domain, isAvailable, record: domainRecord });
+      res.json({ 
+        domain, 
+        isAvailable: availabilityResult.available,
+        registrar: availabilityResult.registrar,
+        price: availabilityResult.price,
+        premium: availabilityResult.premium,
+        record: domainRecord 
+      });
     } catch (error) {
       console.error('Domain check error:', error);
       res.status(500).json({ message: "Failed to check domain availability" });

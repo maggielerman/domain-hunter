@@ -122,6 +122,8 @@ export class MemStorage implements IStorage {
       ...insertSearch,
       id,
       createdAt: new Date(),
+      filters: insertSearch.filters || {},
+      resultsCount: insertSearch.resultsCount || 0,
     };
     this.searches.set(id, search);
     return search;

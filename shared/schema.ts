@@ -13,7 +13,7 @@ export const domains = pgTable("domains", {
   affiliateLink: text("affiliate_link"),
   description: text("description"),
   tags: text("tags").array(),
-  length: serial("length").notNull(),
+  length: serial("length").notNull().default(0),
   checkedAt: timestamp("checked_at").defaultNow(),
 });
 
