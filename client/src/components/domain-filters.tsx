@@ -50,8 +50,8 @@ export default function DomainFilters({ filters, onFiltersChange }: DomainFilter
   };
 
   return (
-    <aside className="lg:w-80 flex-shrink-0">
-      <Card className="sticky top-24">
+    <aside className="w-full lg:w-80 lg:flex-shrink-0">
+      <Card className="lg:sticky lg:top-24 max-h-screen lg:overflow-y-auto">
         <CardHeader>
           <CardTitle className="flex items-center">
             <Filter className="mr-2 h-5 w-5 text-brand-500" />
