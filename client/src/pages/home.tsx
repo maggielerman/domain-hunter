@@ -33,7 +33,7 @@ export default function Home() {
             </div>
             <nav className="hidden md:flex items-center space-x-6">
               <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">How it works</a>
-              <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Pricing</a>
+              <a href="/affiliate-setup" className="text-slate-600 hover:text-brand-500 font-medium">Affiliate Setup</a>
               <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
             </nav>
           </div>

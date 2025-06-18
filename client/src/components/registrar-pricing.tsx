@@ -21,7 +21,8 @@ export default function RegistrarPricing({ domain }: RegistrarPricingProps) {
       name,
       price: data.price,
       affiliateLink: data.affiliateLink,
-      logo: data.logo
+      logo: data.logo,
+      hasAffiliate: data.hasAffiliate
     }))
     .sort((a, b) => a.price - b.price); // Sort by price, cheapest first
 
@@ -79,6 +80,11 @@ export default function RegistrarPricing({ domain }: RegistrarPricingProps) {
                   <span className="font-medium">{registrar.name}</span>
                   {index === 0 && (
                     <Star className="h-4 w-4 text-green-600 fill-current" />
+                  )}
+                  {!registrar.hasAffiliate && (
+                    <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded">
+                      Direct
+                    </span>
                   )}
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertDomainSchema, insertSearchSchema, domainFiltersSchema } from "@shared/schema";
 import { z } from "zod";
 import axios from "axios";
+import { AFFILIATE_CONFIGS, getRegistrarPricing } from "./affiliate-config";
 
 // Domain generation utilities with real pricing
 const EXTENSIONS = [
@@ -289,20 +290,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (let i = 0; i < domainData.length; i++) {
         const domainInfo = domainData[i];
         const availabilityResult = availabilityResults[i];
-        const registrar = REGISTRARS[Math.floor(Math.random() * REGISTRARS.length)];
+        const randomConfig = AFFILIATE_CONFIGS[Math.floor(Math.random() * AFFILIATE_CONFIGS.length)];
         
-        // Get pricing from all registrars for this extension
-        const registrarPricing: Record<string, any> = {};
-        REGISTRARS.forEach(reg => {
-          const extensionPrice = (reg.pricing as any)[domainInfo.extension];
-          if (extensionPrice) {
-            registrarPricing[reg.name] = {
-              price: extensionPrice,
-              affiliateLink: `${reg.affiliate}${domainInfo.name}`,
-              logo: reg.logo
-            };
-          }
-        });
+        // Get pricing and affiliate links from all registrars for this extension
+        const registrarPricing = getRegistrarPricing(domainInfo.name, domainInfo.extension);
 
         // Use API price if available, otherwise use cheapest registrar price
         const prices = Object.values(registrarPricing).map((r: any) => r.price);
@@ -316,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           price: finalPrice,
           isAvailable: availabilityResult.available,
           isPremium,
-          registrar: availabilityResult.registrar || 'Multiple',
+          registrar: availabilityResult.registrar || randomConfig.name,
           affiliateLink: registrarPricing[Object.keys(registrarPricing)[0]]?.affiliateLink,
           registrarPricing,
           description: `Perfect for ${keywords.join(', ')} related businesses`,
