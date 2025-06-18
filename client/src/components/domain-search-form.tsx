@@ -141,37 +141,75 @@ export default function DomainSearchForm({
     generateDomainsMutation.mutate({ query: searchQuery, filters });
   };
 
+  const isExactDomain = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}$/.test(searchQuery.trim());
+
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-          <Input
-            type="text"
-            placeholder="Enter keywords or exact domain (e.g., 'mycompany.com' or 'tech startup')"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 text-lg border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-colors h-14"
-          />
+        <div className="text-center mb-6">
+          <h3 className="text-2xl font-bold text-slate-900 mb-2">Domain Search</h3>
+          <p className="text-slate-600">Enter keywords to generate suggestions or search a specific domain</p>
         </div>
-        
-        <div className="flex flex-wrap gap-4 justify-center">
-          <Button
-            type="submit"
-            disabled={isSearching}
-            className="bg-brand-500 text-white px-8 py-3 rounded-xl font-semibold hover:bg-brand-600 transition-colors h-12"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            {isSearching ? "Generating..." : "Generate Domains"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="bg-white text-brand-500 border-2 border-brand-500 px-8 py-3 rounded-xl font-semibold hover:bg-brand-50 transition-colors h-12"
-          >
-            <Sliders className="mr-2 h-4 w-4" />
-            Advanced Search
-          </Button>
+
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="e.g., 'tech startup' or 'example.com'"
+              value={searchQuery}
+              onChange={(e) => onSearchQueryChange(e.target.value)}
+              className="text-lg h-14 px-6 border-2 border-slate-200 focus:border-brand-500 rounded-xl"
+              disabled={isSearching}
+            />
+            {isExactDomain && (
+              <div className="mt-2 text-sm text-brand-600 flex items-center gap-1">
+                <Search className="h-4 w-4" />
+                Exact domain detected - will check availability
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-3">
+            <Button
+              type="submit"
+              disabled={isSearching || !searchQuery.trim()}
+              className="h-14 px-8 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-semibold flex items-center gap-2"
+            >
+              {isSearching ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="h-5 w-5" />
+                  Search
+                </>
+              )}
+            </Button>
+            
+            {!isExactDomain && (
+              <Button
+                type="button"
+                onClick={handleGenerateSearch}
+                disabled={isSearching || !searchQuery.trim()}
+                variant="outline"
+                className="h-14 px-8 border-2 border-purple-500 text-purple-500 hover:bg-purple-50 rounded-xl font-semibold flex items-center gap-2"
+              >
+                {generateDomainsMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    Generate
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </form>
     </div>
