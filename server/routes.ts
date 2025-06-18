@@ -260,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : EXTENSIONS;
 
       // Smart domain generation with filtering
-      const targetCount = 50;
+      const targetCount = filters.availableOnly ? 100 : 80; // More results when filtering for available only
       let selectedDomains: Array<{
         name: string;
         extension: string;
@@ -269,34 +269,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }> = [];
 
       console.log(`Generating domains for keywords: ${keywords.join(', ')}`);
-      console.log(`Filters: availableOnly=${filters.availableOnly}, extensions=${JSON.stringify(filters.extensions)}`);
+      console.log(`Target: ${targetCount} domains, availableOnly=${filters.availableOnly}`);
 
-      // Generate domains iteratively, checking availability as we go
-      for (const variation of variations) {
-        if (selectedDomains.length >= targetCount) break;
+      // Batch processing for better performance
+      const batchSize = 20;
+      const batches: string[][] = [];
+      
+      // Prioritize extensions - .com first, then others
+      const prioritizedExtensions = targetExtensions.sort((a, b) => {
+        if (a.ext === '.com') return -1;
+        if (b.ext === '.com') return 1;
+        return 0;
+      });
+
+      // Generate domain batches
+      for (let i = 0; i < variations.length && selectedDomains.length < targetCount; i += batchSize) {
+        const variationBatch = variations.slice(i, i + batchSize);
         
-        for (const { ext, price } of targetExtensions) {
+        for (const { ext, price } of prioritizedExtensions) {
           if (selectedDomains.length >= targetCount) break;
           
-          const domainName = `${variation}${ext}`;
-          const availability = await checkDomainAvailability(domainName);
+          const domainBatch = variationBatch.map(variation => `${variation}${ext}`);
           
-          // Apply filters during generation
-          if (filters.availableOnly && !availability.available) {
-            continue; // Skip unavailable domains if only available requested
+          // Check batch availability in parallel
+          const availabilityResults = await Promise.all(
+            domainBatch.map(domain => checkDomainAvailability(domain))
+          );
+          
+          // Process results
+          for (let j = 0; j < domainBatch.length; j++) {
+            if (selectedDomains.length >= targetCount) break;
+            
+            const domainName = domainBatch[j];
+            const availability = availabilityResults[j];
+            const variation = variationBatch[j];
+            
+            // Apply filters during generation
+            if (filters.availableOnly && !availability.available) {
+              continue;
+            }
+            
+            // Apply price filters
+            const domainPrice = parseFloat(availability.price || price);
+            if (filters.minPrice && domainPrice < filters.minPrice) continue;
+            if (filters.maxPrice && domainPrice > filters.maxPrice) continue;
+            
+            selectedDomains.push({
+              name: domainName,
+              extension: ext,
+              price: availability.price || price,
+              variation
+            });
           }
-          
-          // Apply price filters
-          const domainPrice = parseFloat(availability.price || price);
-          if (filters.minPrice && domainPrice < filters.minPrice) continue;
-          if (filters.maxPrice && domainPrice > filters.maxPrice) continue;
-          
-          selectedDomains.push({
-            name: domainName,
-            extension: ext,
-            price: availability.price || price,
-            variation
-          });
         }
       }
 

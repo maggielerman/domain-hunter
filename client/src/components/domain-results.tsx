@@ -49,9 +49,33 @@ export default function DomainResults({ results, isLoading, searchQuery, filters
         return a.name.length - b.name.length;
       case 'alphabetical':
         return a.name.localeCompare(b.name);
+      case 'available-first':
+        if (a.isAvailable && !b.isAvailable) return -1;
+        if (!a.isAvailable && b.isAvailable) return 1;
+        return parseFloat(a.price) - parseFloat(b.price); // Then by price
       case 'relevance':
       default:
-        return 0; // Keep original order for relevance
+        // Score by keyword match and domain quality
+        const getRelevanceScore = (domain: typeof a) => {
+          let score = 0;
+          const domainName = domain.name.toLowerCase();
+          
+          // Shorter domains score higher
+          score += (20 - Math.min(domainName.length, 20));
+          
+          // .com domains score higher
+          if (domain.extension === '.com') score += 10;
+          
+          // Available domains score higher
+          if (domain.isAvailable) score += 15;
+          
+          // Lower prices score higher
+          score += (100 - Math.min(parseFloat(domain.price), 100)) / 10;
+          
+          return score;
+        };
+        
+        return getRelevanceScore(b) - getRelevanceScore(a);
     }
   });
 
@@ -156,11 +180,12 @@ export default function DomainResults({ results, isLoading, searchQuery, filters
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="relevance">Relevance</SelectItem>
+                  <SelectItem value="relevance">Best Match</SelectItem>
                   <SelectItem value="price-asc">Price: Low to High</SelectItem>
                   <SelectItem value="price-desc">Price: High to Low</SelectItem>
                   <SelectItem value="length">Length: Short to Long</SelectItem>
-                  <SelectItem value="alphabetical">Alphabetical</SelectItem>
+                  <SelectItem value="alphabetical">A-Z</SelectItem>
+                  <SelectItem value="available-first">Available First</SelectItem>
                 </SelectContent>
               </Select>
             </div>

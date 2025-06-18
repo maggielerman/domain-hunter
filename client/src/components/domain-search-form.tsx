@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Sparkles, Sliders } from "lucide-react";
@@ -27,6 +27,22 @@ export default function DomainSearchForm({
   filters 
 }: DomainSearchFormProps) {
   const { toast } = useToast();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Auto-complete suggestions based on popular domain patterns
+  useEffect(() => {
+    if (searchQuery.length > 2 && !searchQuery.includes('.')) {
+      const popularSuffixes = ['app', 'tech', 'hub', 'pro', 'labs', 'zone', 'ai', 'io'];
+      const newSuggestions = popularSuffixes
+        .map(suffix => `${searchQuery}${suffix}`)
+        .slice(0, 5);
+      setSuggestions(newSuggestions);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [searchQuery]);
 
   const exactSearchMutation = useMutation({
     mutationFn: async (exactDomain: string) => {
@@ -152,15 +168,38 @@ export default function DomainSearchForm({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
+          <div className="flex-1 relative">
             <Input
               type="text"
               placeholder="e.g., 'tech startup' or 'example.com'"
               value={searchQuery}
               onChange={(e) => onSearchQueryChange(e.target.value)}
+              onFocus={() => setShowSuggestions(searchQuery.length > 2 && !searchQuery.includes('.'))}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               className="text-lg h-14 px-6 border-2 border-slate-200 focus:border-brand-500 rounded-xl"
               disabled={isSearching}
             />
+            
+            {/* Auto-suggestions dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+                {suggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => {
+                      onSearchQueryChange(suggestion);
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg"
+                  >
+                    <span className="text-slate-600">{searchQuery}</span>
+                    <span className="text-brand-500 font-medium">{suggestion.slice(searchQuery.length)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            
             {isExactDomain && (
               <div className="mt-2 text-sm text-brand-600 flex items-center gap-1">
                 <Search className="h-4 w-4" />
