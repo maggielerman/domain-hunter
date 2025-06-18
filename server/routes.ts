@@ -95,54 +95,83 @@ function generateDomainVariations(keywords: string[]): string[] {
 }
 
 async function checkDomainAvailability(domain: string): Promise<DomainAvailabilityResult> {
-  // Fast realistic simulation based on domain characteristics
   const extension = domain.substring(domain.lastIndexOf('.'));
-  const domainName = domain.substring(0, domain.lastIndexOf('.'));
   const basePrice = EXTENSIONS.find(ext => ext.ext === extension)?.price || '19.99';
   
-  // Well-known domains that are definitely taken
-  const knownTakenDomains = ['google', 'facebook', 'amazon', 'microsoft', 'apple', 'twitter', 'instagram', 'youtube', 'linkedin', 'github', 'stackoverflow', 'reddit', 'wikipedia', 'netflix', 'spotify'];
-  const isDefinitelyTaken = knownTakenDomains.some(known => domainName.toLowerCase().includes(known));
-  
-  if (isDefinitelyTaken) {
-    return {
-      domain,
-      available: false,
-      registrar: 'Major Brand',
-      price: undefined,
-      premium: false
-    };
+  // Try real domain availability check using RapidAPI
+  if (process.env.RAPIDAPI_KEY) {
+    try {
+      const response = await axios.get(`https://domain-availability.p.rapidapi.com/v1/${domain}`, {
+        timeout: 5000,
+        headers: {
+          'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
+          'X-RapidAPI-Host': 'domain-availability.p.rapidapi.com'
+        }
+      });
+
+      if (response.data) {
+        return {
+          domain,
+          available: response.data.available || false,
+          registrar: response.data.registrar || 'Unknown',
+          price: response.data.available ? basePrice : undefined,
+          premium: response.data.premium || false
+        };
+      }
+    } catch (apiError: any) {
+      console.log(`RapidAPI check failed for ${domain}: ${apiError.message}`);
+      // Continue to fallback method below
+    }
   }
-  
-  // Check for common patterns that indicate likely availability
-  const commonWords = ['app', 'web', 'site', 'online', 'digital', 'tech', 'blog', 'shop', 'store', 'news', 'info', 'data', 'cloud', 'smart', 'mobile', 'best', 'top', 'my', 'get', 'new'];
-  const isCommon = commonWords.some(word => domainName.toLowerCase().includes(word));
+
+  // Fallback: Try WHOIS-based check via other free APIs
+  try {
+    // Try domain check via DNS resolution
+    const dns = require('dns');
+    const util = require('util');
+    const resolve = util.promisify(dns.resolve);
+    
+    try {
+      await resolve(domain, 'A');
+      // Domain resolves - likely taken
+      return {
+        domain,
+        available: false,
+        registrar: 'Registered (DNS)',
+        price: undefined,
+        premium: false
+      };
+    } catch (dnsError) {
+      // Domain doesn't resolve - might be available
+      return {
+        domain,
+        available: true,
+        registrar: 'Available',
+        price: basePrice,
+        premium: parseFloat(basePrice) > 30
+      };
+    }
+  } catch (error) {
+    console.log(`DNS check failed for ${domain}`);
+  }
+
+  // Final fallback - conservative estimate based on domain patterns
+  const domainName = domain.substring(0, domain.lastIndexOf('.'));
   const isShort = domainName.length <= 4;
   const hasNumbers = /\d/.test(domainName);
   const hasHyphens = domainName.includes('-');
-  const isUnique = domainName.length > 8 && !isCommon;
-  const hasSpecialChars = /[0-9\-_]/.test(domainName);
   
-  // Calculate availability probability with realistic weighting
-  let availabilityScore = Math.random() * 0.6 + 0.2; // Base score between 0.2-0.8
-  
-  if (isShort) availabilityScore -= 0.7;
-  if (isCommon) availabilityScore -= 0.5;
-  if (hasNumbers) availabilityScore += 0.3;
-  if (hasHyphens) availabilityScore += 0.4;
-  if (isUnique) availabilityScore += 0.3;
-  if (hasSpecialChars) availabilityScore += 0.2;
-  if (extension === '.xyz' || extension === '.info') availabilityScore += 0.3;
-  if (extension === '.com') availabilityScore -= 0.2;
-  
-  const isAvailable = availabilityScore > 0.4;
+  // Conservative approach - assume most domains are taken
+  const likelyAvailable = (hasNumbers && domainName.length > 8) || 
+                         (hasHyphens && domainName.length > 10) ||
+                         (domainName.length > 15);
   
   return {
     domain,
-    available: isAvailable,
-    registrar: isAvailable ? 'Available' : 'Registered',
-    price: isAvailable ? basePrice : undefined,
-    premium: isAvailable && parseFloat(basePrice) > 25
+    available: likelyAvailable,
+    registrar: likelyAvailable ? 'Available (Estimated)' : 'Likely Registered',
+    price: likelyAvailable ? basePrice : undefined,
+    premium: likelyAvailable && parseFloat(basePrice) > 30
   };
 }
 
