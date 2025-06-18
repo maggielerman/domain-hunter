@@ -336,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         extension: string;
         price: string;
         variation: string;
-        isAvailable?: boolean;
+        isAvailable: boolean;
       }> = [];
 
       console.log(`Generating domains for keywords: ${keywords.join(', ')}`);
@@ -405,40 +405,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Selected ${selectedDomains.length} domains after filtering`);
       
-      // Get final availability results for selected domains (re-check for consistency)
-      const availabilityResults = await Promise.all(
-        selectedDomains.map(domain => checkDomainAvailability(domain.name))
-      );
-      
-      // Create domain records with availability data
+      // Create domain records without external API calls
+      const generatedDomains = [];
       for (let i = 0; i < selectedDomains.length; i++) {
         const domainInfo = selectedDomains[i];
-        const availabilityResult = availabilityResults[i];
         
         // Get pricing and affiliate links from all registrars for this extension
-        const registrarPricing = getRegistrarPricing(domainInfo.name, domainInfo.extension);
+        const { affiliateLink, registrarPricing } = getRegistrarPricing(domainInfo.name, domainInfo.extension);
 
-        // Use cheapest registrar price
-        const prices = Object.values(registrarPricing).map((r: any) => r.price);
-        const cheapestPrice = prices.length > 0 ? Math.min(...prices) : parseFloat(domainInfo.price);
-        const finalPrice = availabilityResult.price || cheapestPrice.toString();
-        const isPremium = availabilityResult.premium || parseFloat(finalPrice) > 30;
+        // Use configured price for extension
+        const finalPrice = domainInfo.price;
+        const isPremium = parseFloat(finalPrice) > 30;
         
         const domain = await storage.createDomain({
           name: domainInfo.name,
           extension: domainInfo.extension,
           price: finalPrice,
-          isAvailable: availabilityResult.available,
+          isAvailable: domainInfo.isAvailable,
           isPremium,
-          registrar: availabilityResult.registrar || 'Available',
-          affiliateLink: registrarPricing[Object.keys(registrarPricing)[0]]?.affiliateLink,
-          registrarPricing,
-          description: `Generated from keywords: ${keywords.join(', ')}`,
-          tags: keywords,
-          length: domainInfo.name.replace(domainInfo.extension, '').length,
+          registrar: domainInfo.isAvailable ? 'Available (Generated)' : 'Check Required',
+          affiliateLink,
+          registrarPricing: JSON.stringify(registrarPricing),
+          description: `Generated variation of "${keywords.join(' ')}" - ${domainInfo.variation}`,
+          tags: [...keywords, domainInfo.variation],
+          length: domainInfo.name.length
         });
         
-        domains.push(domain);
+        generatedDomains.push(domain);
       }
 
       // Record the search
