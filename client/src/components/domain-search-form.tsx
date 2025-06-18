@@ -136,6 +136,7 @@ export default function DomainSearchForm({
       return;
     }
     
+    setIsSearching(true);
     onSearch(searchQuery);
     generateDomainsMutation.mutate({ query: searchQuery, filters });
   };
