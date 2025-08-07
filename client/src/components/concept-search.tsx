@@ -37,7 +37,10 @@ export default function ConceptSearch({ onDomainsGenerated }: ConceptSearchProps
   const { toast } = useToast();
 
   const analyzeMutation = useMutation({
-    mutationFn: (concept: string) => apiRequest(`/api/concepts/analyze`, "POST", { businessConcept: concept }),
+    mutationFn: async (concept: string) => {
+      const response = await apiRequest("POST", `/api/concepts/analyze`, { businessConcept: concept });
+      return await response.json();
+    },
     onSuccess: (data: any) => {
       setAnalysis(data.analysis);
       toast({
@@ -57,10 +60,13 @@ export default function ConceptSearch({ onDomainsGenerated }: ConceptSearchProps
   });
 
   const generateDomainsMutation = useMutation({
-    mutationFn: (concept: string) => apiRequest(`/api/concepts/generate-domains`, "POST", { 
-      businessConcept: concept, 
-      count: 25 
-    }),
+    mutationFn: async (concept: string) => {
+      const response = await apiRequest("POST", `/api/concepts/generate-domains`, { 
+        businessConcept: concept, 
+        count: 25 
+      });
+      return await response.json();
+    },
     onSuccess: (data: any) => {
       onDomainsGenerated(data.domains, data.analysis);
       toast({

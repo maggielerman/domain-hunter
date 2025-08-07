@@ -41,10 +41,13 @@ export default function AIDomainCard({ domain, businessConcept }: AIDomainCardPr
   const [enhancement, setEnhancement] = useState<any>(null);
 
   const enhanceMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/concepts/enhance-domain`, "POST", {
-      domain: domain.name,
-      businessConcept
-    }),
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/concepts/enhance-domain`, {
+        domain: domain.name,
+        businessConcept
+      });
+      return await response.json();
+    },
     onSuccess: (data: any) => {
       setEnhancement(data.enhancement);
       setShowEnhancement(true);
