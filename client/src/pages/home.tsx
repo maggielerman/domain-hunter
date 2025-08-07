@@ -29,8 +29,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
-              <img src={logoImage} alt="Titan Domains" className="w-8 h-8" />
-              <h1 className="text-xl font-bold text-slate-900">Titan Domains</h1>
+              <img src={logoImage} alt="Domain Titans" className="w-8 h-8" />
+              <h1 className="text-xl font-bold text-slate-900">Domain Titans</h1>
             </div>
             <nav className="hidden md:flex items-center space-x-6">
               <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">How it works</a>
@@ -143,8 +143,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <img src={logoImage} alt="Titan Domains" className="w-8 h-8" />
-                <h4 className="text-xl font-bold">Titan Domains</h4>
+                <img src={logoImage} alt="Domain Titans" className="w-8 h-8" />
+                <h4 className="text-xl font-bold">Domain Titans</h4>
               </div>
               <p className="text-slate-300 mb-6 max-w-md">
                 The fastest way to find and secure your perfect domain name. Powered by advanced algorithms and real-time availability checking.

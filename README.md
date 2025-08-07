@@ -1,4 +1,4 @@
-# Titan Domains
+# Domain Titans
 
 A comprehensive domain name discovery platform built with React and Node.js that helps entrepreneurs find the perfect web address with intelligent search capabilities and real-time availability tracking.
 

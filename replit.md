@@ -1,6 +1,6 @@
 # Overview
 
-Titan Domains is a comprehensive domain name discovery platform that helps entrepreneurs find and purchase domain names through intelligent search capabilities and real-time availability checking. The application generates creative domain variations using keyword-based patterns and integrates with major domain registrars through affiliate programs to monetize domain purchases.
+Domain Titans is a comprehensive domain name discovery platform that helps entrepreneurs find and purchase domain names through intelligent search capabilities and real-time availability checking. The application generates creative domain variations using keyword-based patterns and integrates with major domain registrars through affiliate programs to monetize domain purchases.
 
 # User Preferences
 
