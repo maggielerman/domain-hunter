@@ -54,8 +54,24 @@ export const domainFiltersSchema = z.object({
   sortBy: z.enum(['relevance', 'price-asc', 'price-desc', 'length', 'alphabetical', 'available-first']).optional(),
 });
 
+// Concept search schema
+export const conceptSearches = pgTable("concept_searches", {
+  id: serial("id").primaryKey(),
+  businessConcept: text("business_concept").notNull(),
+  analysis: jsonb("analysis"),
+  suggestions: jsonb("suggestions"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertConceptSearchSchema = createInsertSchema(conceptSearches).omit({ 
+  id: true, 
+  createdAt: true 
+});
+
 export type InsertDomain = z.infer<typeof insertDomainSchema>;
 export type Domain = typeof domains.$inferSelect;
 export type InsertSearch = z.infer<typeof insertSearchSchema>;
 export type Search = typeof searches.$inferSelect;
+export type InsertConceptSearch = z.infer<typeof insertConceptSearchSchema>;
+export type ConceptSearch = typeof conceptSearches.$inferSelect;
 export type DomainFilters = z.infer<typeof domainFiltersSchema>;

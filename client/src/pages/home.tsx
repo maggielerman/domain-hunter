@@ -2,23 +2,37 @@ import { useState } from "react";
 import DomainSearchForm from "@/components/domain-search-form";
 import DomainFilters from "@/components/domain-filters";
 import DomainResults from "@/components/domain-results";
-import { Globe, Search, Sliders, Zap } from "lucide-react";
+import ConceptSearch from "@/components/concept-search";
+import AIDomainCard from "@/components/ai-domain-card";
+import { Globe, Search, Sliders, Zap, Brain, ArrowRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import type { DomainFilters as Filters, Domain } from "@shared/schema";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Domain[]>([]);
+  const [aiDomains, setAiDomains] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     extensions: ['.com'],
     availableOnly: true,
     sortBy: 'relevance'
   });
+  const [currentBusinessConcept, setCurrentBusinessConcept] = useState<string>("");
+  const [conceptAnalysis, setConceptAnalysis] = useState<any>(null);
 
   const quickSearches = ['tech startup', 'creative agency', 'online store'];
 
   const handleQuickSearch = (query: string) => {
     setSearchQuery(query);
+  };
+
+  const handleAiDomainsGenerated = (domains: any[], analysis: any) => {
+    setAiDomains(domains);
+    setConceptAnalysis(analysis);
+    // Clear traditional search results when AI results are shown
+    setSearchResults([]);
   };
 
   return (
@@ -48,53 +62,129 @@ export default function Home() {
             <span className="text-brand-500"> Domain Name</span>
           </h2>
           <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto">
-            Generate creative domain names or check exact domain availability with real-time pricing from trusted registrars.
+            Describe your business idea for AI-powered suggestions, or search by keywords for traditional domain generation.
           </p>
 
-          <DomainSearchForm
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            onSearch={(query) => {
-              setSearchQuery(query);
-              setIsSearching(true);
-            }}
-            isSearching={isSearching}
-            setIsSearching={setIsSearching}
-            onResults={setSearchResults}
-            filters={filters}
-          />
-
-          {/* Quick Examples */}
-          <div className="flex flex-wrap justify-center gap-2 text-sm">
-            <span className="text-slate-500">Popular searches:</span>
-            {quickSearches.map((search) => (
-              <button
-                key={search}
-                onClick={() => handleQuickSearch(search)}
-                className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full hover:bg-slate-200 transition-colors"
-              >
-                {search}
-              </button>
-            ))}
+          {/* AI-Powered Search Interface */}
+          <div className="max-w-4xl mx-auto">
+            <Tabs defaultValue="concept" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsTrigger value="concept" className="flex items-center gap-2">
+                  <Brain className="w-4 h-4" />
+                  AI Concept Search
+                  <Badge variant="secondary" className="text-xs">NEW</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="keyword" className="flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  Keyword Search
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="concept">
+                <ConceptSearch 
+                  onDomainsGenerated={(domains, analysis) => {
+                    handleAiDomainsGenerated(domains, analysis);
+                    // Set the business concept from the component state
+                    setCurrentBusinessConcept(domains[0]?.businessConcept || "");
+                  }} 
+                />
+              </TabsContent>
+              
+              <TabsContent value="keyword">
+                <div className="max-w-2xl mx-auto">
+                  <DomainSearchForm
+                    searchQuery={searchQuery}
+                    onSearchQueryChange={setSearchQuery}
+                    onSearch={(query) => {
+                      setSearchQuery(query);
+                      setIsSearching(true);
+                    }}
+                    isSearching={isSearching}
+                    setIsSearching={setIsSearching}
+                    onResults={setSearchResults}
+                    filters={filters}
+                  />
+                  
+                  {/* Quick search suggestions */}
+                  <div className="mt-6 flex justify-center">
+                    <div className="flex gap-3 flex-wrap justify-center">
+                      <span className="text-slate-500 text-sm">Popular:</span>
+                      {quickSearches.map((suggestion, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleQuickSearch(suggestion)}
+                          className="px-3 py-1 text-sm bg-white border border-slate-200 rounded-full hover:border-brand-300 hover:bg-brand-50 transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </section>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col lg:flex-row gap-8 min-h-0">
-          <DomainFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-          />
-          
-          <DomainResults
-            results={searchResults}
-            isLoading={isSearching}
-            searchQuery={searchQuery}
-            filters={filters}
-          />
-        </div>
+        {/* AI Domain Results */}
+        {aiDomains.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center gap-3 mb-6">
+              <Brain className="text-purple-600 w-6 h-6" />
+              <h3 className="text-2xl font-bold text-slate-900">
+                AI-Generated Domain Suggestions
+              </h3>
+              <Badge className="bg-purple-100 text-purple-700">
+                {aiDomains.length} domains
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {aiDomains.map((domain, index) => (
+                <AIDomainCard 
+                  key={domain.id} 
+                  domain={domain}
+                  businessConcept={currentBusinessConcept}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Traditional Search Results */}
+        {searchResults.length > 0 && (
+          <div className="flex flex-col lg:flex-row gap-8 min-h-0">
+            <DomainFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+            
+            <DomainResults
+              results={searchResults}
+              isLoading={isSearching}
+              searchQuery={searchQuery}
+              filters={filters}
+            />
+          </div>
+        )}
+
+        {/* Welcome message when no results */}
+        {searchResults.length === 0 && aiDomains.length === 0 && (
+          <div className="text-center py-16">
+            <div className="max-w-md mx-auto">
+              <Zap className="text-brand-400 w-16 h-16 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                Ready to find your perfect domain?
+              </h3>
+              <p className="text-slate-600">
+                Try our AI-powered concept search to get intelligent suggestions based on your business idea, or use keyword search for traditional domain generation.
+              </p>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Registrar Partners */}

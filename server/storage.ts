@@ -1,4 +1,4 @@
-import { domains, searches, type Domain, type InsertDomain, type Search, type InsertSearch, type DomainFilters } from "@shared/schema";
+import { domains, searches, conceptSearches, type Domain, type InsertDomain, type Search, type InsertSearch, type ConceptSearch, type InsertConceptSearch, type DomainFilters } from "@shared/schema";
 
 export interface IStorage {
   // Domain operations
@@ -11,19 +11,27 @@ export interface IStorage {
   // Search operations
   createSearch(search: InsertSearch): Promise<Search>;
   getRecentSearches(limit?: number): Promise<Search[]>;
+  
+  // Concept search operations
+  createConceptSearch(conceptSearch: InsertConceptSearch): Promise<ConceptSearch>;
+  getRecentConceptSearches(limit?: number): Promise<ConceptSearch[]>;
 }
 
 export class MemStorage implements IStorage {
   private domains: Map<number, Domain>;
   private searches: Map<number, Search>;
+  private conceptSearches: Map<number, ConceptSearch>;
   private currentDomainId: number;
   private currentSearchId: number;
+  private currentConceptSearchId: number;
 
   constructor() {
     this.domains = new Map();
     this.searches = new Map();
+    this.conceptSearches = new Map();
     this.currentDomainId = 1;
     this.currentSearchId = 1;
+    this.currentConceptSearchId = 1;
   }
 
   async getDomain(id: number): Promise<Domain | undefined> {
@@ -141,6 +149,25 @@ export class MemStorage implements IStorage {
 
   async getRecentSearches(limit: number = 10): Promise<Search[]> {
     return Array.from(this.searches.values())
+      .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime())
+      .slice(0, limit);
+  }
+
+  async createConceptSearch(insertConceptSearch: InsertConceptSearch): Promise<ConceptSearch> {
+    const id = this.currentConceptSearchId++;
+    const conceptSearch: ConceptSearch = {
+      id,
+      businessConcept: insertConceptSearch.businessConcept,
+      analysis: insertConceptSearch.analysis || null,
+      suggestions: insertConceptSearch.suggestions || null,
+      createdAt: new Date(),
+    };
+    this.conceptSearches.set(id, conceptSearch);
+    return conceptSearch;
+  }
+
+  async getRecentConceptSearches(limit: number = 10): Promise<ConceptSearch[]> {
+    return Array.from(this.conceptSearches.values())
       .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime())
       .slice(0, limit);
   }

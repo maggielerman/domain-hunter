@@ -1,10 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDomainSchema, insertSearchSchema, domainFiltersSchema } from "@shared/schema";
+import { insertDomainSchema, insertSearchSchema, domainFiltersSchema, insertConceptSearchSchema } from "@shared/schema";
 import { z } from "zod";
 import axios from "axios";
 import { AFFILIATE_CONFIGS, getRegistrarPricing } from "./affiliate-config";
+import { analyzeConcept, generateConceptBasedDomains, enhanceDomainWithConcept } from "./openai";
 
 // Domain generation utilities with real pricing
 const EXTENSIONS = [
@@ -494,6 +495,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Get recent searches error:', error);
       res.status(500).json({ message: "Failed to get recent searches" });
+    }
+  });
+
+  // AI-powered concept search endpoints
+  app.post("/api/concepts/analyze", async (req, res) => {
+    try {
+      const { businessConcept } = req.body;
+      
+      if (!businessConcept || typeof businessConcept !== 'string') {
+        return res.status(400).json({ error: "Business concept is required" });
+      }
+
+      console.log(`Analyzing business concept: ${businessConcept}`);
+      const analysis = await analyzeConcept(businessConcept);
+      
+      res.json({ analysis });
+    } catch (error) {
+      console.error('Concept analysis error:', error);
+      res.status(500).json({ error: "Failed to analyze business concept" });
+    }
+  });
+
+  app.post("/api/concepts/generate-domains", async (req, res) => {
+    try {
+      const { businessConcept, count = 20 } = req.body;
+      
+      if (!businessConcept || typeof businessConcept !== 'string') {
+        return res.status(400).json({ error: "Business concept is required" });
+      }
+
+      console.log(`Generating AI domains for concept: ${businessConcept}`);
+      
+      // First analyze the concept
+      const analysis = await analyzeConcept(businessConcept);
+      
+      // Generate AI-powered domain suggestions
+      const suggestions = await generateConceptBasedDomains(businessConcept, analysis, count);
+      
+      // Check availability for the AI suggestions
+      const domainsToCheck = suggestions.map(s => s.domain);
+      const availabilityResults = await checkMultipleDomains(domainsToCheck);
+      
+      // Create domain records with AI insights
+      const generatedDomains = [];
+      for (let i = 0; i < suggestions.length; i++) {
+        const suggestion = suggestions[i];
+        const availability = availabilityResults.find(r => r.domain === suggestion.domain) || {
+          domain: suggestion.domain,
+          available: false,
+          registrar: 'Unknown'
+        };
+        
+        const extension = suggestion.domain.substring(suggestion.domain.lastIndexOf('.'));
+        const registrarInfo = getRegistrarPricing(suggestion.domain, extension);
+        const basePrice = EXTENSIONS.find(e => e.ext === extension)?.price || '19.99';
+        
+        const domain = await storage.createDomain({
+          name: suggestion.domain,
+          extension,
+          price: availability.price || basePrice,
+          isAvailable: availability.available,
+          isPremium: availability.premium || false,
+          registrar: availability.registrar || 'Multiple',
+          affiliateLink: registrarInfo.affiliateLink,
+          registrarPricing: registrarInfo.registrarPricing,
+          description: `AI-generated: ${suggestion.reasoning}`,
+          tags: [...analysis.keywords, analysis.industry, 'ai-generated'],
+          length: suggestion.domain.length
+        });
+        
+        generatedDomains.push({
+          ...domain,
+          aiInsights: {
+            reasoning: suggestion.reasoning,
+            brandFit: suggestion.brandFit,
+            memorability: suggestion.memorability,
+            seoValue: suggestion.seoValue
+          }
+        });
+      }
+
+      // Store the concept search
+      await storage.createConceptSearch({
+        businessConcept,
+        analysis,
+        suggestions: generatedDomains
+      });
+
+      res.json({ 
+        domains: generatedDomains, 
+        analysis,
+        total: generatedDomains.length 
+      });
+    } catch (error) {
+      console.error('AI domain generation error:', error);
+      res.status(500).json({ error: "Failed to generate AI-powered domains" });
+    }
+  });
+
+  app.post("/api/concepts/enhance-domain", async (req, res) => {
+    try {
+      const { domain, businessConcept } = req.body;
+      
+      if (!domain || !businessConcept) {
+        return res.status(400).json({ error: "Domain and business concept are required" });
+      }
+
+      console.log(`Enhancing domain ${domain} with concept analysis`);
+      const enhancement = await enhanceDomainWithConcept(domain, businessConcept);
+      
+      res.json({ domain, enhancement });
+    } catch (error) {
+      console.error('Domain enhancement error:', error);
+      res.status(500).json({ error: "Failed to enhance domain analysis" });
     }
   });
 

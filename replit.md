@@ -6,6 +6,16 @@ Domain Titans is a comprehensive domain name discovery platform that helps entre
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes
+
+## AI-Powered Concept Search (January 2025)
+Added comprehensive AI functionality using OpenAI GPT-4o for intelligent domain discovery:
+- Business concept analysis and keyword extraction
+- AI-generated domain suggestions with scoring (brand fit, memorability, SEO value)
+- Enhanced domain analysis with branding insights and marketing opportunities
+- New tabbed interface separating AI concept search from traditional keyword search
+- Custom UI components for AI domain cards with deep analysis features
+
 # System Architecture
 
 ## Frontend Architecture
