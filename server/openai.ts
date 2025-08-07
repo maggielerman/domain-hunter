@@ -72,16 +72,18 @@ export async function generateConceptBasedDomains(
           - Availability likelihood (avoid obvious taken domains)
           - Various naming approaches (compound words, made-up words, descriptive, abstract)
           
-          Respond with JSON array in this exact format:
-          [
-            {
-              "domain": "example.com",
-              "reasoning": "Brief explanation of why this domain fits",
-              "brandFit": 8,
-              "memorability": 7,
-              "seoValue": 6
-            }
-          ]
+          Respond with JSON object in this exact format:
+          {
+            "domains": [
+              {
+                "domain": "example.com",
+                "reasoning": "Brief explanation of why this domain fits",
+                "brandFit": 8,
+                "memorability": 7,
+                "seoValue": 6
+              }
+            ]
+          }
           
           Generate exactly ${count} unique suggestions with various extensions (.com, .io, .co, .tech, .app, .dev, etc.)`
         },
@@ -104,14 +106,13 @@ export async function generateConceptBasedDomains(
       temperature: 0.8
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "[]");
+    const result = JSON.parse(response.choices[0].message.content || '{"domains":[]}');
     
-    // Handle both array and object responses
-    if (Array.isArray(result)) {
-      return result as DomainSuggestion[];
-    } else if (result.domains && Array.isArray(result.domains)) {
+    // Expect object with domains array
+    if (result.domains && Array.isArray(result.domains)) {
       return result.domains as DomainSuggestion[];
     } else {
+      console.error("Unexpected response format:", result);
       throw new Error("Invalid response format from OpenAI");
     }
   } catch (error) {
