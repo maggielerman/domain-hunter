@@ -25,30 +25,44 @@ export default function Home() {
   const quickSearches = ['tech startup', 'creative agency', 'online store'];
 
   const handleQuickSearch = async (query: string) => {
-    setSearchQuery(query);
-    setIsSearching(true);
-    // Clear AI results when doing keyword search
+    // Clear previous results
+    setSearchResults([]);
     setAiDomains([]);
     setConceptAnalysis(null);
     
-    // Automatically trigger search
+    // Automatically trigger AI concept search
     try {
-      const response = await fetch('/api/domains/generate', {
+      // First, analyze the business concept
+      const conceptResponse = await fetch('/api/concepts/analyze', {
         method: 'POST',
-        body: JSON.stringify({ query, filters }),
+        body: JSON.stringify({ businessConcept: query }),
         headers: { 'Content-Type': 'application/json' }
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to generate domains');
+      if (!conceptResponse.ok) {
+        throw new Error('Failed to analyze concept');
       }
       
-      const data = await response.json();
-      setSearchResults(data.domains);
-      setIsSearching(false);
+      const conceptData = await conceptResponse.json();
+      setConceptAnalysis(conceptData.analysis);
+      
+      // Then generate AI domains based on the concept
+      const domainsResponse = await fetch('/api/concepts/generate-domains', {
+        method: 'POST',
+        body: JSON.stringify({ businessConcept: query }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!domainsResponse.ok) {
+        throw new Error('Failed to generate AI domains');
+      }
+      
+      const domainsData = await domainsResponse.json();
+      setAiDomains(domainsData.domains);
+      setCurrentBusinessConcept(query);
+      
     } catch (error) {
-      console.error('Quick search failed:', error);
-      setIsSearching(false);
+      console.error('Quick AI search failed:', error);
     }
   };
 
