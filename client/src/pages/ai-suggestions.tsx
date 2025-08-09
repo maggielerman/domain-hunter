@@ -98,47 +98,7 @@ export default function AISuggestions() {
         </div>
       </section>
 
-      {/* AI Domain Results */}
-      {aiDomains.length > 0 && (
-        <section className="pb-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 mb-8">
-              <Brain className="text-purple-600 w-6 h-6" />
-              <h2 className="text-2xl font-bold text-slate-900">
-                AI-Generated Suggestions
-              </h2>
-              <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-                {aiDomains.length} domains
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {aiDomains.map((domain, index) => (
-                <AIDomainCard 
-                  key={domain.id} 
-                  domain={domain}
-                  businessConcept={currentBusinessConcept}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* Empty State */}
-      {aiDomains.length === 0 && (
-        <section className="py-16">
-          <div className="text-center max-w-md mx-auto px-4">
-            <Brain className="text-brand-400 w-16 h-16 mx-auto mb-6" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-3">
-              Ready to discover your perfect domain?
-            </h3>
-            <p className="text-slate-600">
-              Enter your business concept above and let our AI generate intelligent domain suggestions that match your vision.
-            </p>
-          </div>
-        </section>
-      )}
     </div>
   );
 }

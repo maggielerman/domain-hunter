@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Lightbulb, Target, Users, Zap, Brain, Star } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Loader2, Lightbulb, Target, Users, Zap, Brain, Star, Filter, ChevronDown } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +39,30 @@ interface ConceptSearchProps {
 
 export default function ConceptSearch({ onDomainsGenerated, initialConcept = "", disabled = false }: ConceptSearchProps) {
   const [businessConcept, setBusinessConcept] = useState(initialConcept);
+  const [analysis, setAnalysis] = useState<ConceptAnalysis | null>(null);
+  const [view, setView] = useState<'grid' | 'table'>('grid');
+  const [domains, setDomains] = useState<any[]>([]);
+  const [filteredDomains, setFilteredDomains] = useState<any[]>([]);
+  const [selectedTlds, setSelectedTlds] = useState<string[]>(['.com', '.net', '.org', '.io']);
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const { toast } = useToast();
+
+  // Available TLDs for filtering
+  const availableTlds = [
+    { ext: '.com', price: '$12.99' },
+    { ext: '.net', price: '$14.99' }, 
+    { ext: '.org', price: '$13.99' },
+    { ext: '.io', price: '$39.99' },
+    { ext: '.co', price: '$29.99' },
+    { ext: '.tech', price: '$49.99' },
+    { ext: '.app', price: '$19.99' },
+    { ext: '.dev', price: '$17.99' },
+    { ext: '.ai', price: '$89.99' },
+    { ext: '.xyz', price: '$2.99' },
+    { ext: '.me', price: '$19.99' },
+    { ext: '.info', price: '$19.99' }
+  ];
 
   // Update businessConcept when initialConcept changes
   React.useEffect(() => {
@@ -43,10 +70,34 @@ export default function ConceptSearch({ onDomainsGenerated, initialConcept = "",
       setBusinessConcept(initialConcept);
     }
   }, [initialConcept]);
-  const [analysis, setAnalysis] = useState<ConceptAnalysis | null>(null);
-  const [view, setView] = useState<'grid' | 'table'>('grid');
-  const [domains, setDomains] = useState<any[]>([]);
-  const { toast } = useToast();
+
+  // Filter domains based on selected criteria
+  React.useEffect(() => {
+    let filtered = domains;
+
+    // Filter by TLD
+    if (selectedTlds.length > 0) {
+      filtered = filtered.filter(domain => {
+        const domainTld = '.' + domain.name.split('.').pop();
+        return selectedTlds.includes(domainTld);
+      });
+    }
+
+    // Filter by availability
+    if (availableOnly) {
+      filtered = filtered.filter(domain => domain.isAvailable);
+    }
+
+    setFilteredDomains(filtered);
+  }, [domains, selectedTlds, availableOnly]);
+
+  const handleTldChange = (tld: string, checked: boolean) => {
+    if (checked) {
+      setSelectedTlds([...selectedTlds, tld]);
+    } else {
+      setSelectedTlds(selectedTlds.filter(t => t !== tld));
+    }
+  };
 
   const analyzeMutation = useMutation({
     mutationFn: async (concept: string) => {
@@ -224,28 +275,87 @@ export default function ConceptSearch({ onDomainsGenerated, initialConcept = "",
         </Card>
       )}
 
+      {/* Filters */}
+      {domains.length > 0 && (
+        <div className="space-y-4">
+          <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Filters & Options
+                <ChevronDown className="w-4 h-4" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 mt-4">
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  {/* TLD Selection */}
+                  <div>
+                    <h4 className="font-medium text-slate-900 mb-3">Domain Extensions</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                      {availableTlds.map((tld) => (
+                        <div key={tld.ext} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`tld-${tld.ext}`}
+                            checked={selectedTlds.includes(tld.ext)}
+                            onCheckedChange={(checked) => handleTldChange(tld.ext, checked as boolean)}
+                          />
+                          <label htmlFor={`tld-${tld.ext}`} className="text-xs font-medium text-slate-700">
+                            {tld.ext}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Availability Filter */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="available-only"
+                      checked={availableOnly}
+                      onCheckedChange={setAvailableOnly}
+                    />
+                    <label htmlFor="available-only" className="text-sm font-medium text-slate-700">
+                      Show available domains only
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+
       {/* Domain Results with View Toggle */}
       {domains.length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>AI-Generated Domain Suggestions ({domains.length})</CardTitle>
+              <CardTitle>AI-Generated Domain Suggestions ({filteredDomains.length} of {domains.length})</CardTitle>
               <ViewToggle view={view} onViewChange={setView} />
             </div>
           </CardHeader>
           <CardContent>
-            {view === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {domains.map((domain) => (
-                  <AIDomainCard 
-                    key={domain.id} 
-                    domain={domain} 
-                    businessConcept={businessConcept}
-                  />
-                ))}
-              </div>
+            {filteredDomains.length > 0 ? (
+              view === 'grid' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredDomains.map((domain) => (
+                    <AIDomainCard 
+                      key={domain.id} 
+                      domain={domain} 
+                      businessConcept={businessConcept}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <DomainsTable domains={filteredDomains} />
+              )
             ) : (
-              <DomainsTable domains={domains} />
+              <div className="text-center py-12 text-slate-500">
+                <Filter className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No domains match your filters</h3>
+                <p className="text-slate-600">Try adjusting your domain extension or availability filters.</p>
+              </div>
             )}
           </CardContent>
         </Card>
