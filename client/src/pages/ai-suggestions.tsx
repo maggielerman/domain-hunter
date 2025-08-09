@@ -15,7 +15,8 @@ export default function AISuggestions() {
     const urlParams = new URLSearchParams(window.location.search);
     const concept = urlParams.get('concept');
     if (concept) {
-      // Auto-trigger AI search with the concept
+      // Set the business concept and auto-trigger AI search
+      setCurrentBusinessConcept(concept);
       triggerConceptSearch(concept);
     }
   }, []);
@@ -104,6 +105,7 @@ export default function AISuggestions() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <ConceptSearch 
             onDomainsGenerated={handleAiDomainsGenerated}
+            initialConcept={currentBusinessConcept}
           />
         </div>
       </section>

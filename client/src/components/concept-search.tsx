@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,12 +30,18 @@ interface DomainSuggestion {
 
 interface ConceptSearchProps {
   onDomainsGenerated: (domains: any[], analysis: ConceptAnalysis) => void;
+  initialConcept?: string;
 }
 
+export default function ConceptSearch({ onDomainsGenerated, initialConcept = "" }: ConceptSearchProps) {
+  const [businessConcept, setBusinessConcept] = useState(initialConcept);
 
-
-export default function ConceptSearch({ onDomainsGenerated }: ConceptSearchProps) {
-  const [businessConcept, setBusinessConcept] = useState("");
+  // Update businessConcept when initialConcept changes
+  React.useEffect(() => {
+    if (initialConcept) {
+      setBusinessConcept(initialConcept);
+    }
+  }, [initialConcept]);
   const [analysis, setAnalysis] = useState<ConceptAnalysis | null>(null);
   const [view, setView] = useState<'grid' | 'table'>('grid');
   const [domains, setDomains] = useState<any[]>([]);
