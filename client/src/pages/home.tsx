@@ -175,9 +175,9 @@ export default function Home() {
 
         {/* Welcome message when no results */}
         {searchResults.length === 0 && aiDomains.length === 0 && (
-          <div className="text-left py-16 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md">
-              <Zap className="text-brand-400 w-16 h-16 mb-4" />
+          <div className="text-center py-16 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md mx-auto">
+              <Zap className="text-brand-400 w-16 h-16 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
                 Ready to find your perfect domain?
               </h3>
@@ -192,9 +192,9 @@ export default function Home() {
       {/* Registrar Partners */}
       <section className="bg-white py-16 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-left mb-12">
+          <div className="text-center mb-12">
             <h3 className="text-2xl font-bold text-slate-900 mb-4">Compare Prices Across Multiple Registrars</h3>
-            <p className="text-slate-600 max-w-2xl">
+            <p className="text-slate-600 max-w-2xl mx-auto">
               We show you prices from all major registrars so you can find the best deal for your domain.
             </p>
           </div>
@@ -220,7 +220,7 @@ export default function Home() {
               <div className="text-sm text-slate-500">From $20.00</div>
             </div>
           </div>
-          <div className="text-left mt-8">
+          <div className="text-center mt-8">
             <p className="text-sm text-slate-500">
               Click "Compare Prices" on any available domain to see all registrar options with direct purchase links.
             </p>
