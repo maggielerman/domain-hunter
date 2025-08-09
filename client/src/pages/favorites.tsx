@@ -65,7 +65,7 @@ export default function Favorites() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TopNav showBackButton={true} />
+      <TopNav />
 
       {/* Page Header */}
       <header className="bg-white border-b border-slate-200">

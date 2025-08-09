@@ -59,7 +59,7 @@ export default function BusinessAnalysis() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <TopNav showBackButton={true} />
+      <TopNav />
 
       {/* Page Header */}
       <section className="bg-white py-8 border-b">

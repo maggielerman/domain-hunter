@@ -1,12 +1,8 @@
 import { SimpleAuthTest } from "@/components/auth/simple-auth-test";
-import { Zap, ArrowLeft } from "lucide-react";
+import { Zap } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
-interface TopNavProps {
-  showBackButton?: boolean;
-}
-
-export default function TopNav({ showBackButton = false }: TopNavProps) {
+export default function TopNav() {
   const [location] = useLocation();
 
   const isActive = (path: string) => location === path;
@@ -22,11 +18,6 @@ export default function TopNav({ showBackButton = false }: TopNavProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
-            {showBackButton && (
-              <Link href="/">
-                <ArrowLeft className="w-6 h-6 text-slate-600 hover:text-brand-500 cursor-pointer" />
-              </Link>
-            )}
             <Link href="/" className="flex items-center space-x-2">
               <Zap className="text-brand-500 w-8 h-8" />
               <h1 className="text-2xl font-bold text-slate-900">Domain Titans</h1>
