@@ -24,8 +24,32 @@ export default function Home() {
 
   const quickSearches = ['tech startup', 'creative agency', 'online store'];
 
-  const handleQuickSearch = (query: string) => {
+  const handleQuickSearch = async (query: string) => {
     setSearchQuery(query);
+    setIsSearching(true);
+    // Clear AI results when doing keyword search
+    setAiDomains([]);
+    setConceptAnalysis(null);
+    
+    // Automatically trigger search
+    try {
+      const response = await fetch('/api/domains/generate', {
+        method: 'POST',
+        body: JSON.stringify({ query, filters }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate domains');
+      }
+      
+      const data = await response.json();
+      setSearchResults(data.domains);
+      setIsSearching(false);
+    } catch (error) {
+      console.error('Quick search failed:', error);
+      setIsSearching(false);
+    }
   };
 
   const handleAiDomainsGenerated = (domains: any[], analysis: any) => {
@@ -115,6 +139,9 @@ export default function Home() {
                       onSearch={(query) => {
                         setSearchQuery(query);
                         setIsSearching(true);
+                        // Clear AI results when doing keyword search
+                        setAiDomains([]);
+                        setConceptAnalysis(null);
                       }}
                       isSearching={isSearching}
                       setIsSearching={setIsSearching}
