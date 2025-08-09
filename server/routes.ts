@@ -5,6 +5,7 @@ import { insertDomainSchema, insertSearchSchema, domainFiltersSchema, insertConc
 import { z } from "zod";
 import axios from "axios";
 import { AFFILIATE_CONFIGS, getRegistrarPricing } from "./affiliate-config";
+import { calculateDomainMetrics } from "./domain-metrics";
 import { analyzeConcept, generateConceptBasedDomains, enhanceDomainWithConcept } from "./openai";
 
 // Domain generation utilities with real pricing
@@ -255,19 +256,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const finalPrice = availabilityResult.price || cheapestPrice.toString();
       const isPremium = availabilityResult.premium || parseFloat(finalPrice) > 30;
       
-      // Create domain record
+      // Use the cheapest registrar price as the main price
+      const actualPrice = cheapestPrice.toString();
+      const domainMetrics = calculateDomainMetrics(domain);
+      
+      // Create domain record  
       const domainRecord = await storage.createDomain({
         name: domain,
         extension,
-        price: finalPrice,
+        price: actualPrice,
         isAvailable: availabilityResult.available,
-        isPremium,
+        isPremium: parseFloat(actualPrice) > 50,
         registrar: availabilityResult.registrar || 'Multiple',
         affiliateLink: registrarInfo.affiliateLink,
         registrarPricing: registrarInfo.registrarPricing,
         description: `Direct search for ${domain}`,
         tags: [domain.substring(0, domain.lastIndexOf('.'))],
         length: domain.length,
+        metrics: domainMetrics
       });
       
       res.json({ domain: domainRecord });
@@ -553,18 +559,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
               !best || info.price < best.price ? { name, ...info } : best, null as any)
           : null;
         
+        const finalPrice = bestRegistrar?.price.toString() || availability.price || basePrice;
+        const domainMetrics = calculateDomainMetrics(suggestion.domain);
+        
         const domain = await storage.createDomain({
           name: suggestion.domain,
           extension,
-          price: availability.price || (bestRegistrar?.price.toString()) || basePrice,
+          price: finalPrice,
           isAvailable: availability.available,
-          isPremium: availability.premium || false,
+          isPremium: availability.premium || parseFloat(finalPrice) > 50,
           registrar: availability.registrar || bestRegistrar?.name || 'Multiple',
           affiliateLink: bestRegistrar?.affiliateLink || registrarInfo.affiliateLink,
           registrarPricing: registrarInfo.registrarPricing,
           description: `AI-generated: ${suggestion.reasoning}`,
           tags: [...analysis.keywords, analysis.industry, 'ai-generated'],
-          length: suggestion.domain.length
+          length: suggestion.domain.length,
+          metrics: domainMetrics
         });
         
         generatedDomains.push({

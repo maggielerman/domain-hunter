@@ -16,6 +16,15 @@ Added comprehensive AI functionality using OpenAI GPT-4o for intelligent domain 
 - New tabbed interface separating AI concept search from traditional keyword search
 - Custom UI components for AI domain cards with deep analysis features
 
+## Enhanced UI & Domain Metrics System (January 2025)
+Major UI improvements with comprehensive domain analysis and view options:
+- Added sortable table view alongside existing card layout with view toggle functionality
+- Implemented accurate pricing that reflects actual registrar costs through affiliate API integration
+- Enhanced domain metrics system including character length, SEO scores, brandability ratings, and memorability analysis
+- Improved rate limiting handling with graceful fallbacks and better error messaging
+- Better affiliate link accuracy with real-time pricing from multiple registrars (GoDaddy, Namecheap, Hover)
+- Domain analysis now includes age, backlinks, category classification, and brand potential scoring
+
 ## Improved Domain Availability & Affiliate System (January 2025)
 Fixed critical issues with domain availability accuracy and affiliate monetization:
 - Improved availability checking logic to handle rate limiting gracefully

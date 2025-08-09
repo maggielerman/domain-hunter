@@ -7,6 +7,9 @@ import { Loader2, Lightbulb, Target, Users, Zap, Brain, Star } from "lucide-reac
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import ViewToggle from "./view-toggle";
+import DomainsTable from "./domains-table";
+import AIDomainCard from "./ai-domain-card";
 
 interface ConceptAnalysis {
   keywords: string[];
@@ -34,6 +37,8 @@ interface ConceptSearchProps {
 export default function ConceptSearch({ onDomainsGenerated }: ConceptSearchProps) {
   const [businessConcept, setBusinessConcept] = useState("");
   const [analysis, setAnalysis] = useState<ConceptAnalysis | null>(null);
+  const [view, setView] = useState<'grid' | 'table'>('grid');
+  const [domains, setDomains] = useState<any[]>([]);
   const { toast } = useToast();
 
   const analyzeMutation = useMutation({
@@ -68,6 +73,7 @@ export default function ConceptSearch({ onDomainsGenerated }: ConceptSearchProps
       return await response.json();
     },
     onSuccess: (data: any) => {
+      setDomains(data.domains);
       onDomainsGenerated(data.domains, data.analysis);
       toast({
         title: "AI Domains Generated",
@@ -202,6 +208,33 @@ export default function ConceptSearch({ onDomainsGenerated }: ConceptSearchProps
                 ))}
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Domain Results with View Toggle */}
+      {domains.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>AI-Generated Domain Suggestions ({domains.length})</CardTitle>
+              <ViewToggle view={view} onViewChange={setView} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {view === 'grid' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {domains.map((domain) => (
+                  <AIDomainCard 
+                    key={domain.id} 
+                    domain={domain} 
+                    businessConcept={businessConcept}
+                  />
+                ))}
+              </div>
+            ) : (
+              <DomainsTable domains={domains} />
+            )}
           </CardContent>
         </Card>
       )}
