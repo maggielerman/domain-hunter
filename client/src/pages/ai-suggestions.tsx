@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SimpleAuthTest } from "@/components/auth/simple-auth-test";
 import ConceptSearch from "@/components/concept-search";
 import AIDomainCard from "@/components/ai-domain-card";
@@ -9,6 +9,48 @@ export default function AISuggestions() {
   const [aiDomains, setAiDomains] = useState<any[]>([]);
   const [currentBusinessConcept, setCurrentBusinessConcept] = useState<string>("");
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null);
+
+  useEffect(() => {
+    // Get business concept from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const concept = urlParams.get('concept');
+    if (concept) {
+      // Auto-trigger AI search with the concept
+      triggerConceptSearch(concept);
+    }
+  }, []);
+
+  const triggerConceptSearch = async (concept: string) => {
+    try {
+      // First, analyze the business concept
+      const conceptResponse = await fetch('/api/concepts/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ businessConcept: concept }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (conceptResponse.ok) {
+        const conceptData = await conceptResponse.json();
+        setConceptAnalysis(conceptData.analysis);
+      }
+      
+      // Then generate AI domains based on the concept
+      const domainsResponse = await fetch('/api/concepts/generate-domains', {
+        method: 'POST',
+        body: JSON.stringify({ businessConcept: concept }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (domainsResponse.ok) {
+        const domainsData = await domainsResponse.json();
+        setAiDomains(domainsData.domains);
+        setCurrentBusinessConcept(concept);
+      }
+      
+    } catch (error) {
+      console.error('Auto AI search failed:', error);
+    }
+  };
 
   const handleAiDomainsGenerated = (domains: any[], analysis: any) => {
     setAiDomains(domains);

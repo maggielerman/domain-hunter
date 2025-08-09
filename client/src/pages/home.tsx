@@ -8,10 +8,10 @@ import { Link } from "wouter";
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   
-  const handleDomainSearch = () => {
+  const handleDomainSearch = async () => {
     if (searchQuery.trim()) {
-      // Redirect to search results page with query
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      // Use AI concept search by default - redirect to AI suggestions page with the concept
+      window.location.href = `/ai-suggestions?concept=${encodeURIComponent(searchQuery.trim())}`;
     }
   };
 
@@ -46,7 +46,7 @@ export default function Home() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <Input
                 type="text"
-                placeholder="Type the domain you want"
+                placeholder="Describe your business idea (e.g., 'online bakery', 'tech startup')"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleDomainSearch()}
@@ -56,15 +56,19 @@ export default function Home() {
             <Button 
               onClick={handleDomainSearch}
               size="lg"
-              className="px-8 py-6 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl"
+              className="px-8 py-6 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl flex items-center gap-2"
             >
-              Search Domains
+              <Brain className="w-5 h-5" />
+              Generate AI Domains
             </Button>
           </div>
           <div className="text-center mt-4">
             <p className="text-sm text-slate-500">
-              <span className="font-semibold text-brand-600">$0.01*</span>/1st yr — Share your info with the world. 
-              <span className="text-xs">3-year purchase required. Additional years $21.99*</span>
+              <span className="font-semibold text-brand-600">AI-powered suggestions</span> — Describe your business and get intelligent domain ideas
+              <br />
+              <Link href="/search" className="text-brand-600 hover:text-brand-700 underline text-xs">
+                Or use traditional keyword search
+              </Link>
             </p>
           </div>
         </div>
