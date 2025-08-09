@@ -24,7 +24,7 @@ export default function Home() {
   const [currentBusinessConcept, setCurrentBusinessConcept] = useState<string>("");
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null);
 
-  const quickSearches = ['online store'];
+  const quickSearches = [];
 
   const handleQuickSearch = async (query: string) => {
     // Clear previous results
