@@ -4,6 +4,12 @@ import { storage } from "./storage";
 import { insertDomainSchema, insertSearchSchema, domainFiltersSchema, insertConceptSearchSchema } from "@shared/schema";
 import { z } from "zod";
 import axios from "axios";
+
+const searchExactSchema = z.object({
+  domainName: z.string(),
+  tlds: z.array(z.string()),
+  availableOnly: z.boolean().default(true)
+});
 import { AFFILIATE_CONFIGS, getRegistrarPricing } from "./affiliate-config";
 import { calculateDomainMetrics } from "./domain-metrics";
 import { analyzeConcept, generateConceptBasedDomains, enhanceDomainWithConcept } from "./openai";
@@ -227,6 +233,74 @@ async function checkMultipleDomains(domains: string[]): Promise<DomainAvailabili
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Exact domain search endpoint with TLD selection
+  app.post("/api/domains/search-exact", async (req, res) => {
+    try {
+      const { domainName, tlds, availableOnly } = searchExactSchema.parse(req.body);
+      
+      console.log(`Exact domain search for: ${domainName} with TLDs: ${tlds.join(', ')}`);
+      
+      const domains = [];
+      
+      for (const tld of tlds) {
+        const fullDomain = `${domainName}${tld}`;
+        
+        try {
+          const availabilityResult = await checkDomainAvailability(fullDomain);
+          
+          // Skip if not available and user wants available only
+          if (!availabilityResult.available && availableOnly) {
+            continue;
+          }
+          
+          const extension = tld;
+          const registrarInfo = getRegistrarPricing(fullDomain, extension);
+          const prices = Object.values(registrarInfo.registrarPricing).map((r: any) => r.price);
+          const cheapestPrice = prices.length > 0 ? Math.min(...prices) : parseFloat(availabilityResult.price || '19.99');
+          const actualPrice = cheapestPrice.toString();
+          const domainMetrics = calculateDomainMetrics(fullDomain);
+          
+          const domainData = {
+            name: fullDomain,
+            extension,
+            price: actualPrice,
+            isAvailable: availabilityResult.available,
+            isPremium: parseFloat(actualPrice) > 50,
+            registrar: availabilityResult.registrar || 'Multiple',
+            affiliateLink: registrarInfo.affiliateLink,
+            registrarPricing: registrarInfo.registrarPricing,
+            description: `${domainName} with ${tld} extension`,
+            tags: [domainName],
+            length: fullDomain.length,
+            metrics: domainMetrics
+          };
+
+          domains.push(domainData);
+          
+          // Save to storage
+          await storage.createDomain(domainData);
+          
+          // Add small delay between requests to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+        } catch (error) {
+          console.error(`Error checking ${fullDomain}:`, error);
+          // Continue with other domains even if one fails
+        }
+      }
+
+      res.json({ 
+        domains,
+        total: domains.length,
+        available: domains.filter(d => d.isAvailable).length
+      });
+      
+    } catch (error) {
+      console.error('Exact domain search error:', error);
+      res.status(500).json({ error: "Failed to search domains" });
+    }
+  });
+
   // Generate domains based on keywords
   // Single domain availability check endpoint
   app.post("/api/domains/check", async (req, res) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Sparkles, Sliders } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -27,49 +28,42 @@ export default function DomainSearchForm({
   filters 
 }: DomainSearchFormProps) {
   const { toast } = useToast();
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedTlds, setSelectedTlds] = useState<string[]>(['.com', '.net', '.org']);
+  const [showAvailableOnly, setShowAvailableOnly] = useState(true);
 
-  // Auto-complete suggestions based on popular domain patterns
-  useEffect(() => {
-    if (searchQuery.length > 2 && !searchQuery.includes('.')) {
-      const popularSuffixes = ['app', 'tech', 'hub', 'pro', 'labs', 'zone', 'ai', 'io'];
-      const newSuggestions = popularSuffixes
-        .map(suffix => `${searchQuery}${suffix}`)
-        .slice(0, 5);
-      setSuggestions(newSuggestions);
-      setShowSuggestions(true);
+  const availableTlds = [
+    { ext: '.com', price: '$12.99' },
+    { ext: '.net', price: '$14.99' }, 
+    { ext: '.org', price: '$13.99' },
+    { ext: '.io', price: '$39.99' },
+    { ext: '.co', price: '$29.99' },
+    { ext: '.tech', price: '$49.99' },
+    { ext: '.app', price: '$19.99' },
+    { ext: '.dev', price: '$17.99' },
+    { ext: '.ai', price: '$89.99' },
+    { ext: '.xyz', price: '$2.99' },
+    { ext: '.me', price: '$19.99' },
+    { ext: '.info', price: '$19.99' }
+  ];
+
+  const handleTldChange = (tld: string, checked: boolean) => {
+    if (checked) {
+      setSelectedTlds([...selectedTlds, tld]);
     } else {
-      setShowSuggestions(false);
+      setSelectedTlds(selectedTlds.filter(t => t !== tld));
     }
-  }, [searchQuery]);
+  };
 
-  const exactSearchMutation = useMutation({
-    mutationFn: async (exactDomain: string) => {
-      const response = await fetch('/api/domains/check', {
+  const domainSearchMutation = useMutation({
+    mutationFn: async ({ domainName, tlds, availableOnly }: { domainName: string; tlds: string[]; availableOnly: boolean }) => {
+      const response = await fetch('/api/domains/search-exact', {
         method: 'POST',
-        body: JSON.stringify({ domain: exactDomain }),
+        body: JSON.stringify({ domainName, tlds, availableOnly }),
         headers: { 'Content-Type': 'application/json' }
       });
       
       if (!response.ok) {
-        throw new Error('Failed to check domain availability');
-      }
-      
-      return response.json();
-    },
-  });
-
-  const generateDomainsMutation = useMutation({
-    mutationFn: async ({ query, filters }: { query: string; filters: DomainFilters }) => {
-      const response = await fetch('/api/domains/generate', {
-        method: 'POST',
-        body: JSON.stringify({ query, filters }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to generate domains');
+        throw new Error('Failed to search domains');
       }
       
       return response.json();
@@ -79,176 +73,135 @@ export default function DomainSearchForm({
       setIsSearching(false);
       const availableCount = data.domains.filter((d: any) => d.isAvailable).length;
       toast({
-        title: "Search Complete",
-        description: `Found ${availableCount} available domains out of ${data.total} suggestions`,
+        title: "Domain Search Complete",
+        description: `Found ${availableCount} available domains out of ${data.domains.length} checked`,
       });
     },
     onError: (error) => {
-      console.error('Search error:', error);
+      console.error('Domain search error:', error);
       setIsSearching(false);
       toast({
         title: "Search Failed",
-        description: "Unable to generate domains. Please try again.",
+        description: "Unable to search domains. Please try again.",
         variant: "destructive",
       });
     },
   });
 
+
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) {
       toast({
-        title: "Search Query Required",
-        description: "Please enter keywords or a domain name to search.",
+        title: "Domain Name Required",
+        description: "Please enter a domain name to search.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsSearching(true);
-    onSearch(searchQuery);
-    
-    // Check if it's an exact domain search (contains a dot and valid extension)
-    const isExactDomain = searchQuery.includes('.') && 
-      (searchQuery.endsWith('.com') || searchQuery.endsWith('.net') || 
-       searchQuery.endsWith('.org') || searchQuery.endsWith('.io') ||
-       searchQuery.endsWith('.co') || searchQuery.endsWith('.tech') ||
-       searchQuery.endsWith('.app') || searchQuery.endsWith('.dev') ||
-       searchQuery.endsWith('.ai') || searchQuery.endsWith('.xyz') ||
-       searchQuery.endsWith('.me') || searchQuery.endsWith('.info'));
-
-    if (isExactDomain) {
-      exactSearchMutation.mutate(searchQuery, {
-        onSuccess: (data) => {
-          onResults([data.domain]);
-          setIsSearching(false);
-          toast({
-            title: "Domain Check Complete",
-            description: `${data.domain.name} is ${data.domain.isAvailable ? 'available' : 'not available'}`,
-          });
-        },
-        onError: (error) => {
-          console.error('Exact domain check failed:', error);
-          setIsSearching(false);
-          toast({
-            title: "Domain Check Failed",
-            description: "Unable to check domain. Please try again.",
-            variant: "destructive",
-          });
-        },
-      });
-    } else {
-      generateDomainsMutation.mutate({ query: searchQuery, filters });
-    }
-  };
-
-  const handleGenerateSearch = () => {
-    if (!searchQuery.trim()) {
+    if (selectedTlds.length === 0) {
       toast({
-        title: "Search Query Required", 
-        description: "Please enter keywords to generate domains.",
+        title: "Select TLDs",
+        description: "Please select at least one TLD to search.",
         variant: "destructive",
       });
       return;
     }
-    
+
     setIsSearching(true);
     onSearch(searchQuery);
-    generateDomainsMutation.mutate({ query: searchQuery, filters });
+    
+    // Remove any existing TLD from the search query
+    const cleanDomainName = searchQuery.replace(/\.[a-z]+$/i, '').toLowerCase();
+    
+    domainSearchMutation.mutate({ 
+      domainName: cleanDomainName, 
+      tlds: selectedTlds, 
+      availableOnly: showAvailableOnly 
+    });
   };
 
-  const isExactDomain = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}$/.test(searchQuery.trim());
+
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="text-center mb-6">
           <h3 className="text-2xl font-bold text-slate-900 mb-2">Domain Search</h3>
-          <p className="text-slate-600">Enter keywords to generate suggestions or search a specific domain</p>
+          <p className="text-slate-600">Enter a domain name and select TLDs to check availability</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="space-y-4">
+          {/* Domain name input */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Domain Name
+            </label>
             <Input
               type="text"
-              placeholder="e.g., 'tech startup' or 'example.com'"
+              placeholder="e.g., 'mycompany' (without TLD)"
               value={searchQuery}
               onChange={(e) => onSearchQueryChange(e.target.value)}
-              onFocus={() => setShowSuggestions(searchQuery.length > 2 && !searchQuery.includes('.'))}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              className="text-lg h-14 px-6 border-2 border-slate-200 focus:border-brand-500 rounded-xl"
+              className="text-lg h-12 px-4 border-2 border-slate-200 focus:border-brand-500 rounded-lg"
               disabled={isSearching}
             />
-            
-            {/* Auto-suggestions dropdown */}
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
-                {suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => {
-                      onSearchQueryChange(suggestion);
-                      setShowSuggestions(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-50 first:rounded-t-lg last:rounded-b-lg"
-                  >
-                    <span className="text-slate-600">{searchQuery}</span>
-                    <span className="text-brand-500 font-medium">{suggestion.slice(searchQuery.length)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            {isExactDomain && (
-              <div className="mt-2 text-sm text-brand-600 flex items-center gap-1">
-                <Search className="h-4 w-4" />
-                Exact domain detected - will check availability
-              </div>
-            )}
           </div>
-          
-          <div className="flex gap-3">
-            <Button
-              type="submit"
-              disabled={isSearching || !searchQuery.trim()}
-              className="h-14 px-8 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-semibold flex items-center gap-2"
-            >
-              {isSearching ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Search className="h-5 w-5" />
-                  Search
-                </>
-              )}
-            </Button>
-            
-            {!isExactDomain && (
-              <Button
-                type="button"
-                onClick={handleGenerateSearch}
-                disabled={isSearching || !searchQuery.trim()}
-                variant="outline"
-                className="h-14 px-8 border-2 border-purple-500 text-purple-500 hover:bg-purple-50 rounded-xl font-semibold flex items-center gap-2"
-              >
-                {generateDomainsMutation.isPending ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-500"></div>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-5 w-5" />
-                    Generate
-                  </>
-                )}
-              </Button>
-            )}
+
+          {/* TLD Selection */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-3">
+              Select TLDs to check ({selectedTlds.length} selected)
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {availableTlds.map((tld) => (
+                <div key={tld.ext} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-slate-50">
+                  <Checkbox
+                    id={tld.ext}
+                    checked={selectedTlds.includes(tld.ext)}
+                    onCheckedChange={(checked) => handleTldChange(tld.ext, !!checked)}
+                  />
+                  <label htmlFor={tld.ext} className="flex-1 cursor-pointer">
+                    <div className="font-medium text-sm">{tld.ext}</div>
+                    <div className="text-xs text-slate-500">{tld.price}</div>
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* Filter Options */}
+          <div className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg">
+            <Checkbox
+              id="available-only"
+              checked={showAvailableOnly}
+              onCheckedChange={(checked) => setShowAvailableOnly(!!checked)}
+            />
+            <label htmlFor="available-only" className="text-sm font-medium text-slate-700 cursor-pointer">
+              Show available domains only
+            </label>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <Button
+            type="submit"
+            disabled={isSearching || !searchQuery.trim() || selectedTlds.length === 0}
+            className="h-12 px-8 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-semibold flex items-center gap-2"
+          >
+            {isSearching ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Searching...
+              </>
+            ) : (
+              <>
+                <Search className="h-5 w-5" />
+                Search Domains
+              </>
+            )}
+          </Button>
         </div>
       </form>
     </div>
