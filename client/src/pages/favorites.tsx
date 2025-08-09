@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/lib/simple-auth';
 import { Heart, ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,9 +7,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'wouter';
 
+interface SimpleUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export default function Favorites() {
-  const { user, isSignedIn } = useAuth();
+  const [user, setUser] = useState<SimpleUser | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [selectedListId, setSelectedListId] = useState<number | undefined>();
+
+  useEffect(() => {
+    // Check for stored user on load
+    const storedUser = localStorage.getItem('domain-titans-user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.warn('Invalid stored user data');
+        localStorage.removeItem('domain-titans-user');
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  const isSignedIn = !!user;
 
   // Get user's domain lists
   const { data: lists = [], isLoading: listsLoading } = useQuery({

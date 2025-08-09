@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/simple-auth';
+
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -14,8 +14,25 @@ interface FavoriteButtonProps {
 }
 
 export function FavoriteButton({ domainId, domainName, className }: FavoriteButtonProps) {
-  const { user, isSignedIn } = useAuth();
+  const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // Check for stored user on load
+    const storedUser = localStorage.getItem('domain-titans-user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.warn('Invalid stored user data');
+        localStorage.removeItem('domain-titans-user');
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  const isSignedIn = !!user;
   
   // Check if domain is favorited
   const { data: favoriteData } = useQuery({
