@@ -74,7 +74,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="bg-slate-50">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -171,7 +171,7 @@ export default function Home() {
       </section>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-0 py-6">
+      <main className="max-w-7xl mx-auto px-0 py-8">
         {/* AI Domain Results */}
         {aiDomains.length > 0 && (
           <section className="mb-8 px-4 sm:px-6 lg:px-8">
@@ -216,7 +216,7 @@ export default function Home() {
 
         {/* Welcome message when no results */}
         {searchResults.length === 0 && aiDomains.length === 0 && (
-          <div className="text-center py-12 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md mx-auto">
               <Zap className="text-brand-400 w-16 h-16 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
