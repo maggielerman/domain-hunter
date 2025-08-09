@@ -9,6 +9,8 @@ export default function AISuggestions() {
   const [aiDomains, setAiDomains] = useState<any[]>([]);
   const [currentBusinessConcept, setCurrentBusinessConcept] = useState<string>("");
   const [conceptAnalysis, setConceptAnalysis] = useState<any>(null);
+  const [isAutoSearching, setIsAutoSearching] = useState(false);
+  const [searchProgress, setSearchProgress] = useState<string>("");
 
   useEffect(() => {
     // Get business concept from URL parameters
@@ -22,6 +24,9 @@ export default function AISuggestions() {
   }, []);
 
   const triggerConceptSearch = async (concept: string) => {
+    setIsAutoSearching(true);
+    setSearchProgress("Analyzing your business concept...");
+    
     try {
       // First, analyze the business concept
       const conceptResponse = await fetch('/api/concepts/analyze', {
@@ -33,6 +38,7 @@ export default function AISuggestions() {
       if (conceptResponse.ok) {
         const conceptData = await conceptResponse.json();
         setConceptAnalysis(conceptData.analysis);
+        setSearchProgress("Generating intelligent domain suggestions...");
       }
       
       // Then generate AI domains based on the concept
@@ -44,12 +50,19 @@ export default function AISuggestions() {
       
       if (domainsResponse.ok) {
         const domainsData = await domainsResponse.json();
+        setSearchProgress("Checking domain availability...");
         setAiDomains(domainsData.domains);
         setCurrentBusinessConcept(concept);
+        setSearchProgress("Complete! Found domain suggestions for you.");
+        setTimeout(() => setSearchProgress(""), 2000);
       }
       
     } catch (error) {
       console.error('Auto AI search failed:', error);
+      setSearchProgress("Search failed. Please try again.");
+      setTimeout(() => setSearchProgress(""), 3000);
+    } finally {
+      setIsAutoSearching(false);
     }
   };
 
@@ -103,9 +116,22 @@ export default function AISuggestions() {
       {/* AI Search Interface */}
       <section className="py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {isAutoSearching && (
+            <div className="mb-8 text-center">
+              <div className="inline-flex items-center gap-3 bg-purple-50 border border-purple-200 rounded-lg px-6 py-4">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
+                <div className="text-purple-700">
+                  <p className="font-semibold">AI Search in Progress</p>
+                  <p className="text-sm">{searchProgress}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <ConceptSearch 
             onDomainsGenerated={handleAiDomainsGenerated}
             initialConcept={currentBusinessConcept}
+            disabled={isAutoSearching}
           />
         </div>
       </section>

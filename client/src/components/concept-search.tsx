@@ -31,9 +31,10 @@ interface DomainSuggestion {
 interface ConceptSearchProps {
   onDomainsGenerated: (domains: any[], analysis: ConceptAnalysis) => void;
   initialConcept?: string;
+  disabled?: boolean;
 }
 
-export default function ConceptSearch({ onDomainsGenerated, initialConcept = "" }: ConceptSearchProps) {
+export default function ConceptSearch({ onDomainsGenerated, initialConcept = "", disabled = false }: ConceptSearchProps) {
   const [businessConcept, setBusinessConcept] = useState(initialConcept);
 
   // Update businessConcept when initialConcept changes
@@ -130,15 +131,20 @@ export default function ConceptSearch({ onDomainsGenerated, initialConcept = "" 
                 onChange={(e) => setBusinessConcept(e.target.value)}
                 rows={4}
                 className="resize-none"
-                disabled={isLoading}
+                disabled={disabled || isLoading}
               />
             </div>
             <Button 
               type="submit" 
-              disabled={!businessConcept.trim() || isLoading}
+              disabled={disabled || !businessConcept.trim() || isLoading}
               className="w-full"
             >
-              {isLoading ? (
+              {disabled ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  AI Search in Progress...
+                </>
+              ) : isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {analyzeMutation.isPending ? "Analyzing Concept..." : "Generating Domains..."}
