@@ -214,7 +214,8 @@ async function checkMultipleDomains(domains: string[]): Promise<DomainAvailabili
         console.error(`Failed to check domain ${batch[index]}:`, result.reason);
         results.push({
           domain: batch[index],
-          available: true, // Default to available if check fails
+          available: false, // Default to unavailable if check fails to be safe
+          registrar: 'Unknown - Check Manually'
         });
       }
     });
@@ -251,10 +252,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const extension = domain.substring(domain.lastIndexOf('.'));
       
       // Get pricing from all registrars
-      const registrarPricing = getRegistrarPricing(domain, extension);
+      const registrarInfo = getRegistrarPricing(domain, extension);
       
       // Get cheapest price
-      const prices = Object.values(registrarPricing).map((r: any) => r.price);
+      const prices = Object.values(registrarInfo.registrarPricing).map((r: any) => r.price);
       const cheapestPrice = prices.length > 0 ? Math.min(...prices) : parseFloat(availabilityResult.price || '19.99');
       const finalPrice = availabilityResult.price || cheapestPrice.toString();
       const isPremium = availabilityResult.premium || parseFloat(finalPrice) > 30;
@@ -267,8 +268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAvailable: availabilityResult.available,
         isPremium,
         registrar: availabilityResult.registrar || 'Multiple',
-        affiliateLink: registrarPricing[Object.keys(registrarPricing)[0]]?.affiliateLink,
-        registrarPricing,
+        affiliateLink: registrarInfo.affiliateLink,
+        registrarPricing: registrarInfo.registrarPricing,
         description: `Direct search for ${domain}`,
         tags: [domain.substring(0, domain.lastIndexOf('.'))],
         length: domain.length,
@@ -551,14 +552,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const registrarInfo = getRegistrarPricing(suggestion.domain, extension);
         const basePrice = EXTENSIONS.find(e => e.ext === extension)?.price || '19.99';
         
+        // Get the best (cheapest) affiliate link
+        const bestRegistrar = registrarInfo.registrarPricing && Object.keys(registrarInfo.registrarPricing).length > 0
+          ? Object.entries(registrarInfo.registrarPricing).reduce((best, [name, info]: [string, any]) => 
+              !best || info.price < best.price ? { name, ...info } : best, null as any)
+          : null;
+        
         const domain = await storage.createDomain({
           name: suggestion.domain,
           extension,
-          price: availability.price || basePrice,
+          price: availability.price || (bestRegistrar?.price.toString()) || basePrice,
           isAvailable: availability.available,
           isPremium: availability.premium || false,
-          registrar: availability.registrar || 'Multiple',
-          affiliateLink: registrarInfo.affiliateLink,
+          registrar: availability.registrar || bestRegistrar?.name || 'Multiple',
+          affiliateLink: bestRegistrar?.affiliateLink || registrarInfo.affiliateLink,
           registrarPricing: registrarInfo.registrarPricing,
           description: `AI-generated: ${suggestion.reasoning}`,
           tags: [...analysis.keywords, analysis.industry, 'ai-generated'],

@@ -224,11 +224,22 @@ export default function AIDomainCard({ domain, businessConcept }: AIDomainCardPr
           
           <Button
             size="sm"
-            onClick={() => window.open(`https://google.com/search?q=${domain.name}`, '_blank')}
+            onClick={() => {
+              // Use affiliate link or fallback to GoDaddy
+              const affiliateLink = (domain as any).affiliateLink || 
+                (domain.registrarPricing && Object.values(domain.registrarPricing)[0] as any)?.affiliateLink;
+              
+              if (affiliateLink) {
+                window.open(affiliateLink, '_blank');
+              } else {
+                // Final fallback to GoDaddy search
+                window.open(`https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=${domain.name}`, '_blank');
+              }
+            }}
             className="flex-1"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
-            Check Domain
+            Buy Domain
           </Button>
         </div>
       </CardContent>

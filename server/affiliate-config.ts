@@ -154,5 +154,8 @@ export function getRegistrarPricing(domain: string, extension: string) {
     }
   });
   
-  return registrarPricing;
+  return {
+    registrarPricing,
+    affiliateLink: registrarPricing[Object.keys(registrarPricing)[0]]?.affiliateLink || generateAffiliateLink(AFFILIATE_CONFIGS[0], domain)
+  };
 }
