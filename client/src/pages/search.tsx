@@ -11,8 +11,8 @@ export default function SearchPage() {
   const [searchResults, setSearchResults] = useState<Domain[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [filters, setFilters] = useState<Filters>({
-    extensions: ['.com'],
-    availableOnly: true,
+    extensions: ['.com', '.net', '.org', '.io', '.co', '.tech', '.app', '.dev', '.ai', '.xyz', '.me', '.info'],
+    availableOnly: false,
     sortBy: 'relevance'
   });
 

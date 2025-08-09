@@ -41,10 +41,19 @@ export default function DomainFilters({ filters, onFiltersChange }: DomainFilter
     onFiltersChange({ ...filters, [field]: numValue });
   };
 
+  const selectAllTlds = () => {
+    const allTlds = EXTENSIONS.map(ext => ext.ext);
+    onFiltersChange({ ...filters, extensions: allTlds });
+  };
+
+  const deselectAllTlds = () => {
+    onFiltersChange({ ...filters, extensions: [] });
+  };
+
   const clearAllFilters = () => {
     onFiltersChange({
-      extensions: ['.com'],
-      availableOnly: true,
+      extensions: EXTENSIONS.map(ext => ext.ext),
+      availableOnly: false,
       sortBy: 'relevance'
     });
   };
@@ -62,7 +71,27 @@ export default function DomainFilters({ filters, onFiltersChange }: DomainFilter
           <div className="space-y-6">
           {/* Domain Extensions */}
           <div>
-            <h4 className="font-medium text-slate-900 mb-3">Domain Extensions</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-medium text-slate-900">Domain Extensions</h4>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={selectAllTlds}
+                  className="h-6 px-2 text-xs"
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={deselectAllTlds}
+                  className="h-6 px-2 text-xs"
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
             <div className="space-y-2">
               {EXTENSIONS.map(({ ext, price }) => (
                 <div key={ext} className="flex items-center justify-between">

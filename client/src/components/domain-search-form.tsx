@@ -28,37 +28,16 @@ export default function DomainSearchForm({
   filters 
 }: DomainSearchFormProps) {
   const { toast } = useToast();
-  const [selectedTlds, setSelectedTlds] = useState<string[]>(['.com', '.net', '.org']);
-  const [showAvailableOnly, setShowAvailableOnly] = useState(true);
-
-  const availableTlds = [
-    { ext: '.com', price: '$12.99' },
-    { ext: '.net', price: '$14.99' }, 
-    { ext: '.org', price: '$13.99' },
-    { ext: '.io', price: '$39.99' },
-    { ext: '.co', price: '$29.99' },
-    { ext: '.tech', price: '$49.99' },
-    { ext: '.app', price: '$19.99' },
-    { ext: '.dev', price: '$17.99' },
-    { ext: '.ai', price: '$89.99' },
-    { ext: '.xyz', price: '$2.99' },
-    { ext: '.me', price: '$19.99' },
-    { ext: '.info', price: '$19.99' }
-  ];
-
-  const handleTldChange = (tld: string, checked: boolean) => {
-    if (checked) {
-      setSelectedTlds([...selectedTlds, tld]);
-    } else {
-      setSelectedTlds(selectedTlds.filter(t => t !== tld));
-    }
-  };
 
   const domainSearchMutation = useMutation({
-    mutationFn: async ({ domainName, tlds, availableOnly }: { domainName: string; tlds: string[]; availableOnly: boolean }) => {
+    mutationFn: async ({ domainName }: { domainName: string }) => {
       const response = await fetch('/api/domains/search-exact', {
         method: 'POST',
-        body: JSON.stringify({ domainName, tlds, availableOnly }),
+        body: JSON.stringify({ 
+          domainName, 
+          tlds: ['.com', '.net', '.org', '.io', '.co', '.tech', '.app', '.dev', '.ai', '.xyz', '.me', '.info'], 
+          availableOnly: false 
+        }),
         headers: { 'Content-Type': 'application/json' }
       });
       
@@ -101,15 +80,6 @@ export default function DomainSearchForm({
       return;
     }
 
-    if (selectedTlds.length === 0) {
-      toast({
-        title: "Select TLDs",
-        description: "Please select at least one TLD to search.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSearching(true);
     onSearch(searchQuery);
     
@@ -117,9 +87,7 @@ export default function DomainSearchForm({
     const cleanDomainName = searchQuery.replace(/\.[a-z]+$/i, '').toLowerCase();
     
     domainSearchMutation.mutate({ 
-      domainName: cleanDomainName, 
-      tlds: selectedTlds, 
-      availableOnly: showAvailableOnly 
+      domainName: cleanDomainName
     });
   };
 
@@ -130,7 +98,7 @@ export default function DomainSearchForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="text-center mb-6">
           <h3 className="text-2xl font-bold text-slate-900 mb-2">Domain Search</h3>
-          <p className="text-slate-600">Enter a domain name and select TLDs to check availability</p>
+          <p className="text-slate-600">Enter a domain name to check availability across all extensions</p>
         </div>
 
         <div className="space-y-4">
@@ -149,39 +117,7 @@ export default function DomainSearchForm({
             />
           </div>
 
-          {/* TLD Selection */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">
-              Select TLDs to check ({selectedTlds.length} selected)
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {availableTlds.map((tld) => (
-                <div key={tld.ext} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-slate-50">
-                  <Checkbox
-                    id={tld.ext}
-                    checked={selectedTlds.includes(tld.ext)}
-                    onCheckedChange={(checked) => handleTldChange(tld.ext, !!checked)}
-                  />
-                  <label htmlFor={tld.ext} className="flex-1 cursor-pointer">
-                    <div className="font-medium text-sm">{tld.ext}</div>
-                    <div className="text-xs text-slate-500">{tld.price}</div>
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Filter Options */}
-          <div className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg">
-            <Checkbox
-              id="available-only"
-              checked={showAvailableOnly}
-              onCheckedChange={(checked) => setShowAvailableOnly(!!checked)}
-            />
-            <label htmlFor="available-only" className="text-sm font-medium text-slate-700 cursor-pointer">
-              Show available domains only
-            </label>
-          </div>
         </div>
 
         <div className="flex justify-center">
