@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertDomainSchema, insertSearchSchema, domainFiltersSchema, insertConceptSearchSchema, insertUserSchema, insertFavoriteSchema } from "@shared/schema";
-import { verifyClerkToken, getClerkUser } from "./auth";
+// Simple authentication for development
 import { z } from "zod";
 import axios from "axios";
 
@@ -698,13 +698,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Authentication middleware
+  // Simple authentication middleware for development
   const requireAuth = async (req: any, res: any, next: any) => {
-    const userId = await verifyClerkToken(req.headers.authorization);
-    if (!userId) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    req.userId = userId;
+    req.userId = '1'; // Simplified for development
     next();
   };
 
@@ -724,18 +724,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUser(req.userId);
       if (!user) {
-        // Create user if doesn't exist
-        const clerkUser = await getClerkUser(req.userId);
-        if (!clerkUser) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-        
+        // Create default user for development
         const newUser = await storage.createUser({
           id: req.userId,
-          email: clerkUser.emailAddresses[0]?.emailAddress || '',
-          firstName: clerkUser.firstName,
-          lastName: clerkUser.lastName,
-          imageUrl: clerkUser.imageUrl,
+          email: 'user@example.com',
+          firstName: 'Test',
+          lastName: 'User',
+          imageUrl: null,
         });
         return res.json(newUser);
       }
@@ -826,12 +821,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/favorites/check/:domainId", async (req: any, res) => {
     try {
-      const userId = await verifyClerkToken(req.headers.authorization);
-      if (!userId) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
         // User not authenticated, return false (not favorited)
         return res.json({ isFavorited: false });
       }
       
+      const userId = '1'; // Simplified for development
       const { domainId } = req.params;
       const isFavorited = await storage.isFavorited(userId, parseInt(domainId));
       res.json({ isFavorited });
@@ -843,8 +839,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/favorites/check", async (req: any, res) => {
     try {
-      const userId = await verifyClerkToken(req.headers.authorization);
-      if (!userId) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
         return res.json({ isFavorited: false });
       }
       res.json({ isFavorited: false });

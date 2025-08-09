@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/lib/simple-auth';
 import { Heart, ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from 'wouter';
 
 export default function Favorites() {
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn } = useAuth();
   const [selectedListId, setSelectedListId] = useState<number | undefined>();
 
   // Get user's domain lists

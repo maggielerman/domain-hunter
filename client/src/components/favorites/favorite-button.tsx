@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/simple-auth';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import { AuthDialog } from '@/components/auth/auth-dialog';
+
 
 interface FavoriteButtonProps {
   domainId: number;
