@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { FavoriteButton } from "@/components/favorites/favorite-button";
 
 interface AIDomainCardProps {
   domain: {
@@ -221,6 +222,12 @@ export default function AIDomainCard({ domain, businessConcept }: AIDomainCardPr
               Compare Prices
             </Button>
           )}
+          
+          <FavoriteButton 
+            domainId={domain.id} 
+            domainName={domain.name}
+            className="flex-1"
+          />
           
           <Button
             size="sm"

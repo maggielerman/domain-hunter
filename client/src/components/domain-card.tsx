@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Ruler, Tags, Calendar, ExternalLink, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { FavoriteButton } from "@/components/favorites/favorite-button";
 import DomainAvailabilityBadge from "./domain-availability-badge";
 import RegistrarPricing from "./registrar-pricing";
 import type { Domain } from "@shared/schema";
@@ -173,14 +174,11 @@ export default function DomainCard({ domain }: DomainCardProps) {
                   </Button>
                 )}
                 
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleFavorite}
-                  className="hover:bg-slate-200"
-                >
-                  <Heart className="h-4 w-4" />
-                </Button>
+                <FavoriteButton 
+                  domainId={domain.id} 
+                  domainName={domain.name}
+                  className="shrink-0"
+                />
               </div>
             </div>
           </div>

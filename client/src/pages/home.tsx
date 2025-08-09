@@ -4,6 +4,7 @@ import DomainFilters from "@/components/domain-filters";
 import DomainResults from "@/components/domain-results";
 import ConceptSearch from "@/components/concept-search";
 import AIDomainCard from "@/components/ai-domain-card";
+import { AuthButton } from "@/components/auth/user-button";
 import { Globe, Search, Sliders, Zap, Brain, ArrowRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -83,11 +84,14 @@ export default function Home() {
               <Zap className="text-brand-500 w-8 h-8" />
               <h1 className="text-xl font-bold text-slate-900">Domain Titans</h1>
             </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">How it works</a>
-              <a href="/affiliate-setup" className="text-slate-600 hover:text-brand-500 font-medium">Affiliate Setup</a>
-              <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
-            </nav>
+            <div className="flex items-center space-x-6">
+              <nav className="hidden md:flex items-center space-x-6">
+                <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">How it works</a>
+                <a href="/affiliate-setup" className="text-slate-600 hover:text-brand-500 font-medium">Affiliate Setup</a>
+                <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
+              </nav>
+              <AuthButton />
+            </div>
           </div>
         </div>
       </header>

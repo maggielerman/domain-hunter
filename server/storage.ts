@@ -1,4 +1,24 @@
-import { domains, searches, conceptSearches, type Domain, type InsertDomain, type Search, type InsertSearch, type ConceptSearch, type InsertConceptSearch, type DomainFilters } from "@shared/schema";
+import { 
+  domains, 
+  searches, 
+  conceptSearches, 
+  users,
+  domainLists,
+  favorites,
+  type Domain, 
+  type InsertDomain, 
+  type Search, 
+  type InsertSearch, 
+  type ConceptSearch, 
+  type InsertConceptSearch, 
+  type User,
+  type InsertUser,
+  type DomainList,
+  type InsertDomainList,
+  type Favorite,
+  type InsertFavorite,
+  type DomainFilters 
+} from "@shared/schema";
 
 export interface IStorage {
   // Domain operations
@@ -15,23 +35,51 @@ export interface IStorage {
   // Concept search operations
   createConceptSearch(conceptSearch: InsertConceptSearch): Promise<ConceptSearch>;
   getRecentConceptSearches(limit?: number): Promise<ConceptSearch[]>;
+  
+  // User operations
+  createUser(user: InsertUser): Promise<User>;
+  getUser(id: string): Promise<User | undefined>;
+  updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // Domain Lists operations
+  createDomainList(list: InsertDomainList): Promise<DomainList>;
+  getUserDomainLists(userId: string): Promise<DomainList[]>;
+  getDomainList(id: number): Promise<DomainList | undefined>;
+  updateDomainList(id: number, updates: Partial<InsertDomainList>): Promise<DomainList | undefined>;
+  deleteDomainList(id: number): Promise<boolean>;
+  
+  // Favorites operations
+  addFavorite(favorite: InsertFavorite): Promise<Favorite>;
+  removeFavorite(userId: string, domainId: number): Promise<boolean>;
+  getUserFavorites(userId: string, listId?: number): Promise<(Favorite & { domain: Domain })[]>;
+  isFavorited(userId: string, domainId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private domains: Map<number, Domain>;
   private searches: Map<number, Search>;
   private conceptSearches: Map<number, ConceptSearch>;
+  private users: Map<string, User>;
+  private domainLists: Map<number, DomainList>;
+  private favorites: Map<number, Favorite>;
   private currentDomainId: number;
   private currentSearchId: number;
   private currentConceptSearchId: number;
+  private currentListId: number;
+  private currentFavoriteId: number;
 
   constructor() {
     this.domains = new Map();
     this.searches = new Map();
     this.conceptSearches = new Map();
+    this.users = new Map();
+    this.domainLists = new Map();
+    this.favorites = new Map();
     this.currentDomainId = 1;
     this.currentSearchId = 1;
     this.currentConceptSearchId = 1;
+    this.currentListId = 1;
+    this.currentFavoriteId = 1;
   }
 
   async getDomain(id: number): Promise<Domain | undefined> {
@@ -170,6 +218,126 @@ export class MemStorage implements IStorage {
     return Array.from(this.conceptSearches.values())
       .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime())
       .slice(0, limit);
+  }
+
+  // User operations
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const user: User = {
+      id: insertUser.id,
+      email: insertUser.email,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      imageUrl: insertUser.imageUrl || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.users.set(user.id, user);
+    
+    // Create default "My Favorites" list
+    await this.createDomainList({
+      userId: user.id,
+      name: "My Favorites",
+      description: "Your favorite domains",
+      isDefault: true,
+    });
+    
+    return user;
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...updates, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  // Domain Lists operations
+  async createDomainList(insertList: InsertDomainList): Promise<DomainList> {
+    const id = this.currentListId++;
+    const list: DomainList = {
+      id,
+      userId: insertList.userId,
+      name: insertList.name,
+      description: insertList.description || null,
+      isDefault: insertList.isDefault || false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.domainLists.set(id, list);
+    return list;
+  }
+
+  async getUserDomainLists(userId: string): Promise<DomainList[]> {
+    return Array.from(this.domainLists.values()).filter(list => list.userId === userId);
+  }
+
+  async getDomainList(id: number): Promise<DomainList | undefined> {
+    return this.domainLists.get(id);
+  }
+
+  async updateDomainList(id: number, updates: Partial<InsertDomainList>): Promise<DomainList | undefined> {
+    const list = this.domainLists.get(id);
+    if (!list) return undefined;
+    
+    const updatedList = { ...list, ...updates, updatedAt: new Date() };
+    this.domainLists.set(id, updatedList);
+    return updatedList;
+  }
+
+  async deleteDomainList(id: number): Promise<boolean> {
+    return this.domainLists.delete(id);
+  }
+
+  // Favorites operations
+  async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
+    const id = this.currentFavoriteId++;
+    const favorite: Favorite = {
+      id,
+      userId: insertFavorite.userId,
+      domainId: insertFavorite.domainId as number,
+      listId: insertFavorite.listId as number,
+      notes: insertFavorite.notes || null,
+      createdAt: new Date(),
+    };
+    this.favorites.set(id, favorite);
+    return favorite;
+  }
+
+  async removeFavorite(userId: string, domainId: number): Promise<boolean> {
+    const favorite = Array.from(this.favorites.values()).find(
+      f => f.userId === userId && f.domainId === domainId
+    );
+    if (!favorite) return false;
+    return this.favorites.delete(favorite.id);
+  }
+
+  async getUserFavorites(userId: string, listId?: number): Promise<(Favorite & { domain: Domain })[]> {
+    const userFavorites = Array.from(this.favorites.values()).filter(f => {
+      if (f.userId !== userId) return false;
+      if (listId && f.listId !== listId) return false;
+      return true;
+    });
+    
+    const favoritesWithDomains = await Promise.all(
+      userFavorites.map(async (favorite) => {
+        const domain = await this.getDomain(favorite.domainId);
+        return { ...favorite, domain: domain! };
+      })
+    );
+    
+    return favoritesWithDomains.filter(f => f.domain);
+  }
+
+  async isFavorited(userId: string, domainId: number): Promise<boolean> {
+    return Array.from(this.favorites.values()).some(
+      f => f.userId === userId && f.domainId === domainId
+    );
   }
 }
 

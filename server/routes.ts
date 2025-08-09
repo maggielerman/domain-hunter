@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertDomainSchema, insertSearchSchema, domainFiltersSchema, insertConceptSearchSchema } from "@shared/schema";
+import { insertDomainSchema, insertSearchSchema, domainFiltersSchema, insertConceptSearchSchema, insertUserSchema, insertFavoriteSchema } from "@shared/schema";
+import { verifyClerkToken, getClerkUser } from "./auth";
 import { z } from "zod";
 import axios from "axios";
 
@@ -647,8 +648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           registrarPricing: registrarInfo.registrarPricing,
           description: `AI-generated: ${suggestion.reasoning}`,
           tags: [...analysis.keywords, analysis.industry, 'ai-generated'],
-          length: suggestion.domain.length,
-          metrics: domainMetrics
+          length: suggestion.domain.length
         });
         
         generatedDomains.push({
@@ -695,6 +695,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Domain enhancement error:', error);
       res.status(500).json({ error: "Failed to enhance domain analysis" });
+    }
+  });
+
+  // Authentication middleware
+  const requireAuth = async (req: any, res: any, next: any) => {
+    const userId = await verifyClerkToken(req.headers.authorization);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    req.userId = userId;
+    next();
+  };
+
+  // User routes
+  app.post("/api/users", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      res.json(user);
+    } catch (error: any) {
+      console.error('User creation error:', error);
+      res.status(400).json({ error: error.message || "Failed to create user" });
+    }
+  });
+
+  app.get("/api/users/me", requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.userId);
+      if (!user) {
+        // Create user if doesn't exist
+        const clerkUser = await getClerkUser(req.userId);
+        if (!clerkUser) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const newUser = await storage.createUser({
+          id: req.userId,
+          email: clerkUser.emailAddresses[0]?.emailAddress || '',
+          firstName: clerkUser.firstName,
+          lastName: clerkUser.lastName,
+          imageUrl: clerkUser.imageUrl,
+        });
+        return res.json(newUser);
+      }
+      res.json(user);
+    } catch (error: any) {
+      console.error('Get user error:', error);
+      res.status(500).json({ error: "Failed to get user" });
+    }
+  });
+
+  // Domain Lists routes
+  app.get("/api/lists", requireAuth, async (req: any, res) => {
+    try {
+      const lists = await storage.getUserDomainLists(req.userId);
+      res.json(lists);
+    } catch (error: any) {
+      console.error('Get lists error:', error);
+      res.status(500).json({ error: "Failed to get domain lists" });
+    }
+  });
+
+  app.post("/api/lists", requireAuth, async (req: any, res) => {
+    try {
+      const listData = { ...req.body, userId: req.userId };
+      const list = await storage.createDomainList(listData);
+      res.json(list);
+    } catch (error: any) {
+      console.error('Create list error:', error);
+      res.status(400).json({ error: error.message || "Failed to create domain list" });
+    }
+  });
+
+  // Favorites routes
+  app.post("/api/favorites", requireAuth, async (req: any, res) => {
+    try {
+      const { domainId, listId } = req.body;
+      
+      // Get user's default list if no listId provided
+      let targetListId = listId;
+      if (!targetListId) {
+        const lists = await storage.getUserDomainLists(req.userId);
+        const defaultList = lists.find(list => list.isDefault);
+        if (!defaultList) {
+          return res.status(400).json({ error: 'No default list found' });
+        }
+        targetListId = defaultList.id;
+      }
+
+      const favorite = await storage.addFavorite({
+        userId: req.userId,
+        domainId,
+        listId: targetListId,
+      });
+      res.json(favorite);
+    } catch (error: any) {
+      console.error('Add favorite error:', error);
+      res.status(400).json({ error: error.message || "Failed to add favorite" });
+    }
+  });
+
+  app.delete("/api/favorites/:domainId", requireAuth, async (req: any, res) => {
+    try {
+      const { domainId } = req.params;
+      const success = await storage.removeFavorite(req.userId, parseInt(domainId));
+      if (!success) {
+        return res.status(404).json({ error: 'Favorite not found' });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('Remove favorite error:', error);
+      res.status(500).json({ error: "Failed to remove favorite" });
+    }
+  });
+
+  app.get("/api/favorites", requireAuth, async (req: any, res) => {
+    try {
+      const { listId } = req.query;
+      const favorites = await storage.getUserFavorites(
+        req.userId, 
+        listId ? parseInt(listId as string) : undefined
+      );
+      res.json(favorites);
+    } catch (error: any) {
+      console.error('Get favorites error:', error);
+      res.status(500).json({ error: "Failed to get favorites" });
+    }
+  });
+
+  app.get("/api/favorites/check/:domainId", requireAuth, async (req: any, res) => {
+    try {
+      const { domainId } = req.params;
+      const isFavorited = await storage.isFavorited(req.userId, parseInt(domainId));
+      res.json(isFavorited);
+    } catch (error: any) {
+      console.error('Check favorite error:', error);
+      res.status(500).json({ error: "Failed to check favorite status" });
     }
   });
 
