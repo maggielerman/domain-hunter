@@ -130,10 +130,10 @@ export default function Home() {
       </section>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-0 py-12">
+      <main className="max-w-7xl mx-auto px-0 py-6">
         {/* AI Domain Results */}
         {aiDomains.length > 0 && (
-          <section className="mb-12 px-4 sm:px-6 lg:px-8">
+          <section className="mb-8 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 mb-6">
               <Brain className="text-purple-600 w-6 h-6" />
               <h3 className="text-2xl font-bold text-slate-900 text-left">
@@ -175,7 +175,7 @@ export default function Home() {
 
         {/* Welcome message when no results */}
         {searchResults.length === 0 && aiDomains.length === 0 && (
-          <div className="text-center py-16 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md mx-auto">
               <Zap className="text-brand-400 w-16 h-16 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
