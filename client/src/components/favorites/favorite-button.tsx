@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '@/lib/simple-auth';
 import { cn } from '@/lib/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { AuthDialog } from '@/components/auth/auth-dialog';
 
 interface FavoriteButtonProps {
   domainId: number;
@@ -13,7 +14,7 @@ interface FavoriteButtonProps {
 }
 
 export function FavoriteButton({ domainId, domainName, className }: FavoriteButtonProps) {
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn } = useAuth();
   const queryClient = useQueryClient();
   
   // Check if domain is favorited
