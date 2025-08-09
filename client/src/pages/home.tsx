@@ -41,6 +41,15 @@ export default function Home() {
       {/* Domain Search Bar - Top Section */}
       <section className="bg-slate-50 py-8 border-b">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-6">
+            <p className="text-lg text-slate-700 mb-2">
+              <span className="font-semibold text-brand-600">AI-powered suggestions</span> — Describe your business and get intelligent domain ideas
+            </p>
+            <Link href="/search" className="text-brand-600 hover:text-brand-700 underline text-sm">
+              Or use traditional keyword search
+            </Link>
+          </div>
+          
           <div className="flex items-center gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -61,15 +70,6 @@ export default function Home() {
               <Brain className="w-5 h-5" />
               Generate AI Domains
             </Button>
-          </div>
-          <div className="text-center mt-4">
-            <p className="text-sm text-slate-500">
-              <span className="font-semibold text-brand-600">AI-powered suggestions</span> — Describe your business and get intelligent domain ideas
-              <br />
-              <Link href="/search" className="text-brand-600 hover:text-brand-700 underline text-xs">
-                Or use traditional keyword search
-              </Link>
-            </p>
           </div>
         </div>
       </section>
