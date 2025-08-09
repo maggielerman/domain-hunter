@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { SimpleAuthTest } from "@/components/auth/simple-auth-test";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Brain, Lightbulb, Target, Users, Zap, ArrowLeft, TrendingUp } from "lucide-react";
+import { Loader2, Brain, Lightbulb, Target, Users, TrendingUp } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import TopNav from "@/components/navigation/top-nav";
 
 interface ConceptAnalysis {
   keywords: string[];
@@ -60,31 +59,7 @@ export default function BusinessAnalysis() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="border-b bg-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <ArrowLeft className="w-6 h-6 text-slate-600 hover:text-brand-500 cursor-pointer" />
-              </Link>
-              <div className="flex items-center space-x-2">
-                <Zap className="text-brand-500 w-8 h-8" />
-                <h1 className="text-2xl font-bold text-slate-900">Domain Titans</h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <nav className="hidden md:flex items-center space-x-6">
-                <Link href="/favorites" className="text-slate-600 hover:text-brand-500 font-medium">Favorites</Link>
-                <Link href="/ai-suggestions" className="text-slate-600 hover:text-brand-500 font-medium">AI Suggestions</Link>
-                <Link href="/search" className="text-slate-600 hover:text-brand-500 font-medium">Domain Search</Link>
-              </nav>
-              <SimpleAuthTest />
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopNav showBackButton={true} />
 
       {/* Page Header */}
       <section className="bg-white py-8 border-b">
@@ -222,7 +197,7 @@ export default function BusinessAnalysis() {
                     size="lg"
                     className="w-full bg-brand-600 hover:bg-brand-700"
                   >
-                    <Zap className="w-4 h-4 mr-2" />
+                    <Brain className="w-4 h-4 mr-2" />
                     Generate Domain Names Based on This Analysis
                   </Button>
                 </div>

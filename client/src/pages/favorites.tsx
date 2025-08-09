@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Heart, ArrowLeft, Plus } from 'lucide-react';
+import { Heart, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from 'wouter';
+import TopNav from '@/components/navigation/top-nav';
 
 interface SimpleUser {
   id: string;
@@ -55,12 +55,9 @@ export default function Favorites() {
           <p className="text-slate-600 mb-6">
             Create an account to save your favorite domains and organize them into lists.
           </p>
-          <Link href="/">
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Search
-            </Button>
-          </Link>
+          <Button onClick={() => window.location.href = '/'}>
+            Back to Search
+          </Button>
         </div>
       </div>
     );
@@ -68,21 +65,15 @@ export default function Favorites() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
+      <TopNav showBackButton={true} />
+
+      {/* Page Header */}
       <header className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Search
-                </Button>
-              </Link>
-              <div className="flex items-center gap-2">
-                <Heart className="w-6 h-6 text-red-500" />
-                <h1 className="text-2xl font-bold text-slate-900">My Favorites</h1>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Heart className="w-6 h-6 text-red-500" />
+              <h1 className="text-2xl font-bold text-slate-900">My Favorites</h1>
             </div>
             <Button size="sm">
               <Plus className="w-4 h-4 mr-2" />

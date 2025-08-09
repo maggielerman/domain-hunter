@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { SimpleAuthTest } from "@/components/auth/simple-auth-test";
 import DomainSearchForm from "@/components/domain-search-form";
 import DomainFilters from "@/components/domain-filters";
 import DomainResults from "@/components/domain-results";
-import { Zap, ArrowLeft, Search } from "lucide-react";
-import { Link } from "wouter";
+import { Search } from "lucide-react";
+import TopNav from "@/components/navigation/top-nav";
 import type { DomainFilters as Filters, Domain } from "@shared/schema";
 
 export default function SearchPage() {
@@ -35,33 +34,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="border-b bg-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <ArrowLeft className="w-6 h-6 text-slate-600 hover:text-brand-500 cursor-pointer" />
-              </Link>
-              <div className="flex items-center space-x-2">
-                <Zap className="text-brand-500 w-8 h-8" />
-                <h1 className="text-2xl font-bold text-slate-900">Domain Titans</h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <nav className="hidden md:flex items-center space-x-6">
-                <Link href="/ai-suggestions" className="text-slate-600 hover:text-brand-500 font-medium">AI Concept Search</Link>
-                <Link href="/search" className="text-brand-600 hover:text-brand-700 font-medium">Traditional Search</Link>
-                <Link href="/business-analysis" className="text-slate-600 hover:text-brand-500 font-medium">Business Analysis</Link>
-                <Link href="/favorites" className="text-slate-600 hover:text-brand-500 font-medium">Favorites</Link>
-                <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
-              </nav>
-              <SimpleAuthTest />
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopNav showBackButton={true} />
 
       {/* Page Header */}
       <section className="bg-white py-8 border-b">

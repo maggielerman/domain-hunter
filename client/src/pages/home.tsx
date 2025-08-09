@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { SimpleAuthTest } from "@/components/auth/simple-auth-test";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Globe, Search, Zap, Brain, ArrowRight, Star, CheckCircle, Users } from "lucide-react";
+import { Globe, Search, Brain, ArrowRight, Star, CheckCircle, Users, Zap } from "lucide-react";
 import { Link } from "wouter";
+import TopNav from "@/components/navigation/top-nav";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,27 +17,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b bg-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Zap className="text-brand-500 w-8 h-8" />
-              <h1 className="text-2xl font-bold text-slate-900">Domain Titans</h1>
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <nav className="hidden md:flex items-center space-x-6">
-                <Link href="/ai-suggestions" className="text-slate-600 hover:text-brand-500 font-medium">AI Concept Search</Link>
-                <Link href="/search" className="text-slate-600 hover:text-brand-500 font-medium">Traditional Search</Link>
-                <Link href="/business-analysis" className="text-slate-600 hover:text-brand-500 font-medium">Business Analysis</Link>
-                <Link href="/favorites" className="text-slate-600 hover:text-brand-500 font-medium">Favorites</Link>
-              </nav>
-              <SimpleAuthTest />
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopNav />
 
       {/* Domain Search Bar - Top Section */}
       <section className="bg-slate-50 py-8 border-b">
