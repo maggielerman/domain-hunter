@@ -1,4 +1,4 @@
-import { ClerkProvider } from '@clerk/clerk-react';
+import { ClerkProvider, ClerkLoaded, ClerkLoading } from '@clerk/clerk-react';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -7,9 +7,15 @@ interface ClerkAuthProviderProps {
 }
 
 export function ClerkAuthProvider({ children }: ClerkAuthProviderProps) {
-  // If no publishable key, render children without Clerk (authentication disabled)
-  if (!clerkPubKey) {
+  // If no publishable key, render children without Clerk
+  if (!clerkPubKey || clerkPubKey.trim() === '') {
     console.warn('Clerk publishable key not found. Authentication features will be disabled.');
+    return <>{children}</>;
+  }
+
+  // Validate key format
+  if (!clerkPubKey.startsWith('pk_')) {
+    console.warn('Invalid Clerk publishable key format. Authentication features will be disabled.');
     return <>{children}</>;
   }
 
@@ -19,19 +25,17 @@ export function ClerkAuthProvider({ children }: ClerkAuthProviderProps) {
       appearance={{
         variables: {
           colorPrimary: '#3b82f6',
-          colorText: '#334155',
-          colorTextSecondary: '#64748b',
-        },
-        elements: {
-          formButtonPrimary: 
-            'bg-blue-600 hover:bg-blue-700 text-white',
-          card: 'border border-slate-200 shadow-lg',
-          headerTitle: 'text-slate-900',
-          headerSubtitle: 'text-slate-600',
         }
       }}
     >
-      {children}
+      <ClerkLoading>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </ClerkLoading>
+      <ClerkLoaded>
+        {children}
+      </ClerkLoaded>
     </ClerkProvider>
   );
 }

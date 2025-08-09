@@ -5,6 +5,7 @@ import DomainResults from "@/components/domain-results";
 import ConceptSearch from "@/components/concept-search";
 import AIDomainCard from "@/components/ai-domain-card";
 import { AuthButton } from "@/components/auth/user-button";
+import { SimpleAuthTest } from "@/components/auth/simple-auth-test";
 import { Globe, Search, Sliders, Zap, Brain, ArrowRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +91,9 @@ export default function Home() {
                 <a href="/affiliate-setup" className="text-slate-600 hover:text-brand-500 font-medium">Affiliate Setup</a>
                 <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
               </nav>
-              <AuthButton />
+              {/* Temporarily use simple auth for debugging */}
+            <SimpleAuthTest />
+            {/* <AuthButton /> */}
             </div>
           </div>
         </div>

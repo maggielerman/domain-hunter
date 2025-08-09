@@ -17,12 +17,12 @@ export function FavoriteButton({ domainId, domainName, className }: FavoriteButt
   const queryClient = useQueryClient();
   
   // Check if domain is favorited
-  const { data: favoriteData = { isFavorited: false } } = useQuery({
+  const { data: favoriteData } = useQuery({
     queryKey: ['/api/favorites/check', domainId],
     enabled: isSignedIn,
   });
   
-  const isFavorited = favoriteData.isFavorited;
+  const isFavorited = (favoriteData as { isFavorited: boolean })?.isFavorited || false;
 
   // Add to favorites mutation
   const addFavoriteMutation = useMutation({
