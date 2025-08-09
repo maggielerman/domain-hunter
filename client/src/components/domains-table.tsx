@@ -79,6 +79,16 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
     }
   };
 
+  const toggleExpanded = (domainId: number) => {
+    const newExpanded = new Set(expandedDomains);
+    if (newExpanded.has(domainId)) {
+      newExpanded.delete(domainId);
+    } else {
+      newExpanded.add(domainId);
+    }
+    setExpandedDomains(newExpanded);
+  };
+
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return <ArrowUpDown className="w-4 h-4" />;
     return sortDirection === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
@@ -234,47 +244,33 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
                 return (
                   <React.Fragment key={domain.id}>
                     <TableRow className={domain.isPremium ? "bg-amber-50" : ""}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{domain.name}</span>
+                    <TableCell className="w-[40%]">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="font-medium text-sm truncate">{domain.name}</span>
                         {domain.isPremium && (
-                          <Badge className="bg-amber-400 text-amber-900 text-xs">
-                            <Star className="mr-1 h-3 w-3" />
+                          <Badge className="bg-amber-400 text-amber-900 text-xs px-1 py-0">
+                            <Star className="mr-1 h-2 w-2" />
                             PREMIUM
                           </Badge>
                         )}
                       </div>
-                      {domain.description && (
-                        <p className="text-sm text-gray-500 mt-1">{String(domain.description)}</p>
+                      {expandedDomains.has(domain.id) && domain.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{String(domain.description)}</p>
                       )}
                     </TableCell>
                     
-                    <TableCell>
-                      <DomainAvailabilityBadge 
-                        isAvailable={domain.isAvailable} 
-                        registrar={domain.registrar}
-                      />
+                    <TableCell className="w-[15%]">
+                      <DomainAvailabilityBadge isAvailable={domain.isAvailable} />
                     </TableCell>
                     
-                    <TableCell>
-                      {domain.isAvailable ? (
-                        <div>
-                          <div className="font-semibold text-green-600">
-                            {formatPrice(bestPrice.price.toString())}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            via {bestPrice.registrar}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500">N/A</span>
-                      )}
+                    <TableCell className="w-[10%] text-right font-medium text-sm">
+                      ${domain.price}
                     </TableCell>
                     
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">{domain.name.length} chars</span>
-                      </div>
+                    <TableCell className="w-[10%] text-center">
+                      <Badge variant="outline" className="text-xs px-1 py-0">
+                        {domain.name.length}
+                      </Badge>
                     </TableCell>
                     
                     <TableCell>
@@ -298,29 +294,36 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
                       </div>
                     </TableCell>
                     
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {domain.isAvailable && (
-                          <Button
-                            size="sm"
-                            onClick={() => handlePurchase(domain)}
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Buy Now
-                          </Button>
-                        )}
+                    <TableCell className="w-[25%]">
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const affiliateLink = (domain as any).affiliateLink || 
+                              (domain.registrarPricing && Object.values(domain.registrarPricing)[0] as any)?.affiliateLink;
+                            
+                            if (affiliateLink) {
+                              window.open(affiliateLink, '_blank');
+                            } else {
+                              // Final fallback to GoDaddy search
+                              window.open(`https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=${domain.name}`, '_blank');
+                            }
+                          }}
+                          className="flex-1 text-xs px-2 py-1 h-7 bg-brand-600 hover:bg-brand-700"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Buy Now
+                        </Button>
                         
-                        {domain.registrarPricing && typeof domain.registrarPricing === 'object' && 
-                         domain.registrarPricing !== null && 
-                         Object.keys(domain.registrarPricing as Record<string, any>).length > 1 && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => toggleDomainExpansion(domain.id)}
-                          >
-                            {expandedDomains.has(domain.id) ? 'Hide' : 'Compare'}
-                          </Button>
-                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => toggleExpanded(domain.id)}
+                          className="flex-1 text-xs px-2 py-1 h-7"
+                        >
+                          <Eye className="w-3 h-3 mr-1" />
+                          {expandedDomains.has(domain.id) ? 'Less' : 'More'}
+                        </Button>
                       </div>
                     </TableCell>
                     </TableRow>

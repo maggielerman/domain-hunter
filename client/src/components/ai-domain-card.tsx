@@ -76,82 +76,60 @@ export default function AIDomainCard({ domain, businessConcept }: AIDomainCardPr
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold text-slate-900 break-all">
+    <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+      <CardContent className="p-3 flex-1 flex flex-col">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1 mb-1 flex-wrap">
+              <h3 className="text-xs font-semibold text-slate-900 truncate">
                 {domain.name}
               </h3>
               <Badge 
                 variant={domain.isAvailable ? "default" : "destructive"}
-                className="text-xs"
+                className="text-xs px-1 py-0"
               >
                 {domain.isAvailable ? "Available" : "Taken"}
               </Badge>
               {domain.isPremium && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs px-1 py-0">
                   Premium
                 </Badge>
               )}
-              <Badge className="bg-purple-100 text-purple-700 text-xs">
-                <Brain className="w-3 h-3 mr-1" />
-                AI
-              </Badge>
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-slate-600 mb-3">
-              <span className="font-medium text-lg text-slate-900">
+            <div className="flex items-center justify-between text-xs text-slate-600 mb-2">
+              <span className="font-bold text-sm text-slate-900">
                 ${domain.price}
               </span>
-              <span>{domain.registrar}</span>
+              <span className="text-xs">{domain.registrar}</span>
             </div>
 
             {domain.aiInsights && (
-              <div className="space-y-3 mb-4">
-                <p className="text-sm text-slate-700 italic">
+              <div className="space-y-2 mb-3 flex-1">
+                <p className="text-xs text-slate-700 italic line-clamp-2">
                   "{domain.aiInsights.reasoning}"
                 </p>
                 
-                <div className="grid grid-cols-3 gap-3 text-xs">
-                  <div className={`p-2 rounded ${getScoreBg(domain.aiInsights.brandFit)}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium">Brand Fit</span>
-                      <span className={`font-bold ${getScoreColor(domain.aiInsights.brandFit)}`}>
-                        {domain.aiInsights.brandFit}/10
-                      </span>
+                <div className="grid grid-cols-3 gap-1 text-xs">
+                  <div className={`p-1 rounded text-center ${getScoreBg(domain.aiInsights.brandFit)}`}>
+                    <div className="font-medium text-xs">Brand</div>
+                    <div className={`font-bold text-xs ${getScoreColor(domain.aiInsights.brandFit)}`}>
+                      {domain.aiInsights.brandFit}/10
                     </div>
-                    <Progress 
-                      value={domain.aiInsights.brandFit * 10} 
-                      className="h-1"
-                    />
                   </div>
                   
-                  <div className={`p-2 rounded ${getScoreBg(domain.aiInsights.memorability)}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium">Memorable</span>
-                      <span className={`font-bold ${getScoreColor(domain.aiInsights.memorability)}`}>
-                        {domain.aiInsights.memorability}/10
-                      </span>
+                  <div className={`p-1 rounded text-center ${getScoreBg(domain.aiInsights.memorability)}`}>
+                    <div className="font-medium text-xs">Memory</div>
+                    <div className={`font-bold text-xs ${getScoreColor(domain.aiInsights.memorability)}`}>
+                      {domain.aiInsights.memorability}/10
                     </div>
-                    <Progress 
-                      value={domain.aiInsights.memorability * 10} 
-                      className="h-1"
-                    />
                   </div>
                   
-                  <div className={`p-2 rounded ${getScoreBg(domain.aiInsights.seoValue)}`}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium">SEO Value</span>
-                      <span className={`font-bold ${getScoreColor(domain.aiInsights.seoValue)}`}>
-                        {domain.aiInsights.seoValue}/10
-                      </span>
+                  <div className={`p-1 rounded text-center ${getScoreBg(domain.aiInsights.seoValue)}`}>
+                    <div className="font-medium text-xs">SEO</div>
+                    <div className={`font-bold text-xs ${getScoreColor(domain.aiInsights.seoValue)}`}>
+                      {domain.aiInsights.seoValue}/10
                     </div>
-                    <Progress 
-                      value={domain.aiInsights.seoValue * 10} 
-                      className="h-1"
-                    />
                   </div>
                 </div>
               </div>
@@ -198,35 +176,30 @@ export default function AIDomainCard({ domain, businessConcept }: AIDomainCardPr
           </div>
         </div>
 
-        <div className="flex gap-2 pt-4 border-t">
+        <div className="flex gap-1 pt-2 border-t mt-auto">
           {businessConcept && (
             <Button
               variant="outline"
               size="sm"
               onClick={handleEnhanceAnalysis}
               disabled={enhanceMutation.isPending}
-              className="flex-1"
+              className="flex-1 text-xs px-1 py-1 h-7"
             >
-              <Eye className="w-4 h-4 mr-2" />
+              <Eye className="w-3 h-3 mr-1" />
               {enhanceMutation.isPending 
-                ? "Analyzing..." 
+                ? "..." 
                 : showEnhancement 
-                  ? "Hide Analysis" 
-                  : "Deep Analysis"
+                  ? "Less" 
+                  : "More"
               }
-            </Button>
-          )}
-          
-          {domain.registrarPricing && Object.keys(domain.registrarPricing).length > 0 && (
-            <Button variant="outline" size="sm" className="flex-1">
-              Compare Prices
             </Button>
           )}
           
           <FavoriteButton 
             domainId={domain.id} 
             domainName={domain.name}
-            className="flex-1"
+            size="sm"
+            className="px-1 py-1 h-7"
           />
           
           <Button
@@ -243,10 +216,10 @@ export default function AIDomainCard({ domain, businessConcept }: AIDomainCardPr
                 window.open(`https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=${domain.name}`, '_blank');
               }
             }}
-            className="flex-1"
+            className="flex-1 text-xs px-1 py-1 h-7 bg-brand-600 hover:bg-brand-700"
           >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Buy Domain
+            <ExternalLink className="w-3 h-3 mr-1" />
+            Buy Now
           </Button>
         </div>
       </CardContent>
