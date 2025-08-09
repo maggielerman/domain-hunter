@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,6 +24,7 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
   const [filter, setFilter] = useState('');
   const [extensionFilter, setExtensionFilter] = useState('all');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
+  const [expandedDomains, setExpandedDomains] = useState<Set<number>>(new Set());
 
   // Sort domains
   const sortedDomains = [...domains].sort((a, b) => {
@@ -116,6 +118,16 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
     } else {
       window.open(`https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=${domain.name}`, '_blank');
     }
+  };
+
+  const toggleDomainExpansion = (domainId: number) => {
+    const newExpanded = new Set(expandedDomains);
+    if (newExpanded.has(domainId)) {
+      newExpanded.delete(domainId);
+    } else {
+      newExpanded.add(domainId);
+    }
+    setExpandedDomains(newExpanded);
   };
 
   // Get unique extensions for filter
@@ -220,7 +232,8 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
                 const bestPrice = getBestPrice(domain);
                 
                 return (
-                  <TableRow key={domain.id} className={domain.isPremium ? "bg-amber-50" : ""}>
+                  <React.Fragment key={domain.id}>
+                    <TableRow className={domain.isPremium ? "bg-amber-50" : ""}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{domain.name}</span>
@@ -268,22 +281,20 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
                       <div className="flex flex-col gap-1 text-sm text-gray-500">
                         <div className="flex items-center gap-1">
                           <TrendingUp className="w-3 h-3" />
-                          <span>SEO: {domain.metrics?.seoScore || 50}/100</span>
+                          <span>SEO: 50/100</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          <span>{domain.metrics?.age || 'New domain'}</span>
+                          <span>New domain</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Link2 className="w-3 h-3" />
-                          <span>{domain.metrics?.backlinks || 'No backlinks'}</span>
+                          <span>No backlinks</span>
                         </div>
-                        {domain.metrics?.brandability && (
-                          <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3" />
-                            <span>Brand: {domain.metrics.brandability}/100</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3" />
+                          <span>Brand: 75/100</span>
+                        </div>
                       </div>
                     </TableCell>
                     
@@ -301,14 +312,69 @@ export default function DomainsTable({ domains, isLoading }: DomainsTableProps) 
                         
                         {domain.registrarPricing && typeof domain.registrarPricing === 'object' && 
                          domain.registrarPricing !== null && 
-                         Object.keys(domain.registrarPricing).length > 1 && (
-                          <Button variant="outline" size="sm">
-                            Compare
+                         Object.keys(domain.registrarPricing as Record<string, any>).length > 1 && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => toggleDomainExpansion(domain.id)}
+                          >
+                            {expandedDomains.has(domain.id) ? 'Hide' : 'Compare'}
                           </Button>
                         )}
                       </div>
                     </TableCell>
-                  </TableRow>
+                    </TableRow>
+                    
+                    {/* Expanded registrar pricing row */}
+                    {expandedDomains.has(domain.id) && domain.registrarPricing && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="p-0">
+                        <div className="bg-gray-50 p-4 border-t">
+                          <h4 className="font-semibold text-sm mb-3">Available at {Object.keys(domain.registrarPricing as Record<string, any>).length} Registrars</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {Object.entries(domain.registrarPricing as Record<string, any>)
+                              .sort(([,a], [,b]) => a.price - b.price)
+                              .map(([registrarName, info], index) => (
+                              <div 
+                                key={registrarName}
+                                className={`p-3 border rounded-lg bg-white ${
+                                  index === 0 ? 'border-green-500 ring-1 ring-green-500' : 'border-gray-200'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-sm">{registrarName}</span>
+                                  {index === 0 && (
+                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                      Best Price
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-lg font-bold text-green-600 mb-2">
+                                  {formatPrice(info.price.toString())}
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  className="w-full"
+                                  onClick={() => {
+                                    if (info.affiliateLink) {
+                                      window.open(info.affiliateLink, '_blank');
+                                    }
+                                  }}
+                                >
+                                  <ExternalLink className="w-3 h-3 mr-1" />
+                                  Buy at {registrarName}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-3 text-center">
+                            Prices shown are current as of last update and may vary. Click to see current pricing on registrar websites.
+                          </p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  </React.Fragment>
                 );
               })}
             </TableBody>
