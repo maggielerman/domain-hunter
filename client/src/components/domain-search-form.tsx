@@ -1,10 +1,7 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Sparkles, Sliders } from "lucide-react";
+import { Search } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Domain, DomainFilters } from "@shared/schema";
 
@@ -123,7 +120,7 @@ export default function DomainSearchForm({
         <div className="flex justify-center">
           <Button
             type="submit"
-            disabled={isSearching || !searchQuery.trim() || selectedTlds.length === 0}
+            disabled={isSearching || !searchQuery.trim()}
             className="h-12 px-8 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-semibold flex items-center gap-2"
           >
             {isSearching ? (

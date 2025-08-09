@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Globe, Search, Brain, ArrowRight, Star, CheckCircle, Users, Zap } from "lucide-react";
 import { Link } from "wouter";
 import TopNav from "@/components/navigation/top-nav";
@@ -37,26 +37,32 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-              <Input
-                type="text"
-                placeholder="Describe your business idea (e.g., 'online bakery', 'tech startup')"
+              <Search className="absolute left-4 top-4 text-slate-400 w-5 h-5" />
+              <Textarea
+                placeholder="Describe your business idea in detail (e.g., 'I'm starting an online bakery that specializes in custom wedding cakes and desserts. I want to focus on premium quality and personalized service.')"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleDomainSearch()}
-                className="pl-12 pr-4 py-6 text-lg border-2 border-slate-200 focus:border-brand-500 rounded-xl shadow-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    handleDomainSearch();
+                  }
+                }}
+                className="pl-12 pr-4 py-4 text-lg border-2 border-slate-200 focus:border-brand-500 rounded-xl shadow-sm min-h-[120px] resize-none"
+                rows={4}
               />
             </div>
-            <Button 
-              onClick={handleDomainSearch}
-              size="lg"
-              className="px-8 py-6 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl flex items-center gap-2"
-            >
-              <Brain className="w-5 h-5" />
-              Generate AI Domains
-            </Button>
+            <div className="flex flex-col justify-end">
+              <Button 
+                onClick={handleDomainSearch}
+                size="lg"
+                className="px-8 py-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl flex items-center gap-2 h-fit"
+              >
+                <Brain className="w-5 h-5" />
+                Generate AI Domains
+              </Button>
+            </div>
           </div>
         </div>
       </section>
