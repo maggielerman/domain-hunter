@@ -77,9 +77,10 @@ export default function AISuggestions() {
             
             <div className="flex items-center space-x-6">
               <nav className="hidden md:flex items-center space-x-6">
+                <Link href="/ai-suggestions" className="text-brand-600 hover:text-brand-700 font-medium">AI Concept Search</Link>
+                <Link href="/search" className="text-slate-600 hover:text-brand-500 font-medium">Traditional Search</Link>
+                <Link href="/business-analysis" className="text-slate-600 hover:text-brand-500 font-medium">Business Analysis</Link>
                 <Link href="/favorites" className="text-slate-600 hover:text-brand-500 font-medium">Favorites</Link>
-                <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">How it works</a>
-                <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
               </nav>
               <SimpleAuthTest />
             </div>

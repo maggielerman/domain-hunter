@@ -51,8 +51,10 @@ export default function SearchPage() {
             
             <div className="flex items-center space-x-6">
               <nav className="hidden md:flex items-center space-x-6">
+                <Link href="/ai-suggestions" className="text-slate-600 hover:text-brand-500 font-medium">AI Concept Search</Link>
+                <Link href="/search" className="text-brand-600 hover:text-brand-700 font-medium">Traditional Search</Link>
+                <Link href="/business-analysis" className="text-slate-600 hover:text-brand-500 font-medium">Business Analysis</Link>
                 <Link href="/favorites" className="text-slate-600 hover:text-brand-500 font-medium">Favorites</Link>
-                <Link href="/ai-suggestions" className="text-slate-600 hover:text-brand-500 font-medium">AI Suggestions</Link>
                 <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
               </nav>
               <SimpleAuthTest />
