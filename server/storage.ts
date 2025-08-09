@@ -55,6 +55,188 @@ export interface IStorage {
   isFavorited(userId: string, domainId: number): Promise<boolean>;
 }
 
+import { db } from "./db";
+import { eq, desc, and } from "drizzle-orm";
+
+export class DatabaseStorage implements IStorage {
+  async getDomain(id: number): Promise<Domain | undefined> {
+    const [domain] = await db.select().from(domains).where(eq(domains.id, id));
+    return domain || undefined;
+  }
+
+  async getDomainByName(name: string): Promise<Domain | undefined> {
+    const [domain] = await db.select().from(domains).where(eq(domains.name, name));
+    return domain || undefined;
+  }
+
+  async createDomain(domain: InsertDomain): Promise<Domain> {
+    const [newDomain] = await db
+      .insert(domains)
+      .values({
+        ...domain,
+        length: domain.name.length
+      })
+      .returning();
+    return newDomain;
+  }
+
+  async updateDomainAvailability(name: string, isAvailable: boolean): Promise<Domain | undefined> {
+    const [updated] = await db
+      .update(domains)
+      .set({ isAvailable, checkedAt: new Date() })
+      .where(eq(domains.name, name))
+      .returning();
+    return updated || undefined;
+  }
+
+  async searchDomains(query: string, filters?: DomainFilters): Promise<Domain[]> {
+    // For now, return empty array - implement search logic as needed
+    return [];
+  }
+
+  async createSearch(search: InsertSearch): Promise<Search> {
+    const [newSearch] = await db
+      .insert(searches)
+      .values(search)
+      .returning();
+    return newSearch;
+  }
+
+  async getRecentSearches(limit = 10): Promise<Search[]> {
+    return await db
+      .select()
+      .from(searches)
+      .orderBy(desc(searches.createdAt))
+      .limit(limit);
+  }
+
+  async createConceptSearch(conceptSearch: InsertConceptSearch): Promise<ConceptSearch> {
+    const [newConceptSearch] = await db
+      .insert(conceptSearches)
+      .values(conceptSearch)
+      .returning();
+    return newConceptSearch;
+  }
+
+  async getRecentConceptSearches(limit = 10): Promise<ConceptSearch[]> {
+    return await db
+      .select()
+      .from(conceptSearches)
+      .orderBy(desc(conceptSearches.createdAt))
+      .limit(limit);
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db
+      .insert(users)
+      .values(user)
+      .returning();
+    return newUser;
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async updateUser(id: string, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const [updated] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async createDomainList(list: InsertDomainList): Promise<DomainList> {
+    const [newList] = await db
+      .insert(domainLists)
+      .values(list)
+      .returning();
+    return newList;
+  }
+
+  async getUserDomainLists(userId: string): Promise<DomainList[]> {
+    return await db
+      .select()
+      .from(domainLists)
+      .where(eq(domainLists.userId, userId))
+      .orderBy(desc(domainLists.createdAt));
+  }
+
+  async getDomainList(id: number): Promise<DomainList | undefined> {
+    const [list] = await db.select().from(domainLists).where(eq(domainLists.id, id));
+    return list || undefined;
+  }
+
+  async updateDomainList(id: number, updates: Partial<InsertDomainList>): Promise<DomainList | undefined> {
+    const [updated] = await db
+      .update(domainLists)
+      .set(updates)
+      .where(eq(domainLists.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteDomainList(id: number): Promise<boolean> {
+    const result = await db.delete(domainLists).where(eq(domainLists.id, id));
+    return result.rowCount > 0;
+  }
+
+  async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
+    const [newFavorite] = await db
+      .insert(favorites)
+      .values(favorite)
+      .returning();
+    return newFavorite;
+  }
+
+  async removeFavorite(userId: string, domainId: number): Promise<boolean> {
+    const result = await db
+      .delete(favorites)
+      .where(and(
+        eq(favorites.userId, userId),
+        eq(favorites.domainId, domainId)
+      ));
+    return result.rowCount > 0;
+  }
+
+  async getUserFavorites(userId: string, listId?: number): Promise<(Favorite & { domain: Domain })[]> {
+    let conditions = [eq(favorites.userId, userId)];
+    if (listId !== undefined) {
+      conditions.push(eq(favorites.listId, listId));
+    }
+
+    const results = await db
+      .select({
+        id: favorites.id,
+        userId: favorites.userId,
+        domainId: favorites.domainId,
+        listId: favorites.listId,
+        notes: favorites.notes,
+        createdAt: favorites.createdAt,
+        domain: domains
+      })
+      .from(favorites)
+      .innerJoin(domains, eq(favorites.domainId, domains.id))
+      .where(and(...conditions))
+      .orderBy(desc(favorites.createdAt));
+
+    return results;
+  }
+
+  async isFavorited(userId: string, domainId: number): Promise<boolean> {
+    const [favorite] = await db
+      .select()
+      .from(favorites)
+      .where(and(
+        eq(favorites.userId, userId),
+        eq(favorites.domainId, domainId)
+      ));
+    return !!favorite;
+  }
+}
+
 export class MemStorage implements IStorage {
   private domains: Map<number, Domain>;
   private searches: Map<number, Search>;
@@ -341,4 +523,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

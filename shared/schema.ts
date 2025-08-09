@@ -1,4 +1,4 @@
-import { pgTable, text, serial, decimal, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, decimal, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -22,7 +22,7 @@ export const searches = pgTable("searches", {
   id: serial("id").primaryKey(),
   query: text("query").notNull(),
   filters: jsonb("filters"),
-  resultsCount: serial("results_count").notNull().default(0),
+  resultsCount: integer("results_count").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -25,23 +25,10 @@ export default function AISuggestions() {
 
   const triggerConceptSearch = async (concept: string) => {
     setIsAutoSearching(true);
-    setSearchProgress("Analyzing your business concept...");
+    setSearchProgress("Generating intelligent domain suggestions...");
     
     try {
-      // First, analyze the business concept
-      const conceptResponse = await fetch('/api/concepts/analyze', {
-        method: 'POST',
-        body: JSON.stringify({ businessConcept: concept }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (conceptResponse.ok) {
-        const conceptData = await conceptResponse.json();
-        setConceptAnalysis(conceptData.analysis);
-        setSearchProgress("Generating intelligent domain suggestions...");
-      }
-      
-      // Then generate AI domains based on the concept
+      // Skip analysis and go straight to domain generation for speed
       const domainsResponse = await fetch('/api/concepts/generate-domains', {
         method: 'POST',
         body: JSON.stringify({ businessConcept: concept }),

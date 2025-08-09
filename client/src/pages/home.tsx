@@ -29,6 +29,7 @@ export default function Home() {
             <div className="flex items-center space-x-6">
               <nav className="hidden md:flex items-center space-x-6">
                 <Link href="/favorites" className="text-slate-600 hover:text-brand-500 font-medium">Favorites</Link>
+                <Link href="/business-analysis" className="text-slate-600 hover:text-brand-500 font-medium">Business Analysis</Link>
                 <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">How it works</a>
                 <a href="#" className="text-slate-600 hover:text-brand-500 font-medium">Support</a>
               </nav>
@@ -45,9 +46,15 @@ export default function Home() {
             <p className="text-lg text-slate-700 mb-2">
               <span className="font-semibold text-brand-600">AI-powered suggestions</span> — Describe your business and get intelligent domain ideas
             </p>
-            <Link href="/search" className="text-brand-600 hover:text-brand-700 underline text-sm">
-              Or use traditional keyword search
-            </Link>
+            <div className="space-x-4">
+              <Link href="/search" className="text-brand-600 hover:text-brand-700 underline text-sm">
+                Traditional keyword search
+              </Link>
+              <span className="text-slate-400">|</span>
+              <Link href="/business-analysis" className="text-brand-600 hover:text-brand-700 underline text-sm">
+                Get detailed business analysis
+              </Link>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">

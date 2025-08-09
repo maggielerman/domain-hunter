@@ -6,6 +6,7 @@ import AffiliateSetup from "@/pages/affiliate-setup";
 import Favorites from "@/pages/favorites";
 import AISuggestions from "@/pages/ai-suggestions";
 import SearchPage from "@/pages/search";
+import BusinessAnalysis from "@/pages/business-analysis";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/favorites" component={Favorites} />
       <Route path="/ai-suggestions" component={AISuggestions} />
       <Route path="/search" component={SearchPage} />
+      <Route path="/business-analysis" component={BusinessAnalysis} />
       <Route component={NotFound} />
     </Switch>
   );
