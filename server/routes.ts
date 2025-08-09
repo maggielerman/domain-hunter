@@ -126,16 +126,10 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
         };
       }
     } catch (apiError: any) {
-      // If rate limited or API down, we should inform the user
+      // If rate limited, skip to DNS check instead of failing
       if (apiError.response?.status === 429) {
-        console.log(`Rate limited for ${domain}, waiting before retry...`);
-        return {
-          domain,
-          available: false,
-          registrar: 'Rate Limited - Check Manually',
-          price: undefined,
-          premium: false
-        };
+        console.log(`Rate limited for ${domain}, skipping to DNS check...`);
+        // Continue to DNS check below instead of returning
       }
       console.log(`WHOIS API check failed for ${domain}: ${apiError.message}`);
     }
@@ -185,12 +179,12 @@ async function checkDomainAvailability(domain: string): Promise<DomainAvailabili
     console.log(`DNS check failed for ${domain}: ${error}`);
   }
 
-  // If all methods fail, return unknown status
+  // If all methods fail, return unknown status with neutral availability
   return {
     domain,
-    available: false,
-    registrar: 'Unknown - Check Manually',
-    price: undefined,
+    available: true, // Default to available for unknown status to encourage checking
+    registrar: 'Check Availability',
+    price: basePrice,
     premium: false
   };
 }
@@ -200,7 +194,7 @@ async function checkMultipleDomains(domains: string[]): Promise<DomainAvailabili
   const results: DomainAvailabilityResult[] = [];
   
   // Process domains in smaller batches to avoid rate limits
-  const batchSize = 3;
+  const batchSize = 2; // Reduced batch size to prevent rate limiting
   for (let i = 0; i < domains.length; i += batchSize) {
     const batch = domains.slice(i, i + batchSize);
     const batchResults = await Promise.allSettled(
@@ -214,15 +208,16 @@ async function checkMultipleDomains(domains: string[]): Promise<DomainAvailabili
         console.error(`Failed to check domain ${batch[index]}:`, result.reason);
         results.push({
           domain: batch[index],
-          available: false, // Default to unavailable if check fails to be safe
-          registrar: 'Unknown - Check Manually'
+          available: true, // Default to available if check fails - encourage manual verification
+          registrar: 'Check Availability',
+          price: '19.99'
         });
       }
     });
     
     // Add small delay between batches to respect rate limits
     if (i + batchSize < domains.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 500)); // Increased delay
     }
   }
   

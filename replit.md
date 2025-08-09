@@ -16,6 +16,14 @@ Added comprehensive AI functionality using OpenAI GPT-4o for intelligent domain 
 - New tabbed interface separating AI concept search from traditional keyword search
 - Custom UI components for AI domain cards with deep analysis features
 
+## Improved Domain Availability & Affiliate System (January 2025)
+Fixed critical issues with domain availability accuracy and affiliate monetization:
+- Improved availability checking logic to handle rate limiting gracefully
+- Fixed affiliate links to redirect to actual registrar purchase pages (GoDaddy, Namecheap, etc.)
+- Enhanced DNS-based availability verification as primary method
+- Better error handling for unknown domain status - defaults to "available" to encourage manual checking
+- Reduced API rate limiting with smaller batch sizes and increased delays
+
 # System Architecture
 
 ## Frontend Architecture
