@@ -56,73 +56,75 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-brand-50 to-white py-16 sm:py-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-6">
-            Find Your Perfect
-            <span className="text-brand-500"> Domain Name</span>
-          </h2>
-          <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto">
-            Describe your business idea for AI-powered suggestions, or search by keywords for traditional domain generation.
-          </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column - Title and Description */}
+            <div className="text-left">
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-6">
+                Find Your Perfect
+                <span className="text-brand-500"> Domain Name</span>
+              </h2>
+              <p className="text-xl text-slate-600 mb-8 max-w-lg">
+                Describe your business idea for AI-powered suggestions, or search by keywords for traditional domain generation.
+              </p>
+              
+              {/* Quick search suggestions */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-slate-500 text-sm">Popular searches:</span>
+                {quickSearches.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleQuickSearch(suggestion)}
+                    className="px-3 py-1 text-sm bg-white border border-slate-200 rounded-full hover:border-brand-300 hover:bg-brand-50 transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* AI-Powered Search Interface */}
-          <div className="max-w-4xl mx-auto">
-            <Tabs defaultValue="concept" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8">
-                <TabsTrigger value="concept" className="flex items-center gap-2">
-                  <Brain className="w-4 h-4" />
-                  AI Concept Search
-                  <Badge variant="secondary" className="text-xs">NEW</Badge>
-                </TabsTrigger>
-                <TabsTrigger value="keyword" className="flex items-center gap-2">
-                  <Search className="w-4 h-4" />
-                  Keyword Search
-                </TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="concept">
-                <ConceptSearch 
-                  onDomainsGenerated={(domains, analysis) => {
-                    handleAiDomainsGenerated(domains, analysis);
-                    // Set the business concept from the component state
-                    setCurrentBusinessConcept(domains[0]?.businessConcept || "");
-                  }} 
-                />
-              </TabsContent>
-              
-              <TabsContent value="keyword">
-                <div className="max-w-2xl mx-auto">
-                  <DomainSearchForm
-                    searchQuery={searchQuery}
-                    onSearchQueryChange={setSearchQuery}
-                    onSearch={(query) => {
-                      setSearchQuery(query);
-                      setIsSearching(true);
-                    }}
-                    isSearching={isSearching}
-                    setIsSearching={setIsSearching}
-                    onResults={setSearchResults}
-                    filters={filters}
+            {/* Right Column - Search Interface */}
+            <div className="w-full">
+              <Tabs defaultValue="concept" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-8">
+                  <TabsTrigger value="concept" className="flex items-center gap-2">
+                    <Brain className="w-4 h-4" />
+                    AI Concept Search
+                    <Badge variant="secondary" className="text-xs">NEW</Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="keyword" className="flex items-center gap-2">
+                    <Search className="w-4 h-4" />
+                    Keyword Search
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="concept">
+                  <ConceptSearch 
+                    onDomainsGenerated={(domains, analysis) => {
+                      handleAiDomainsGenerated(domains, analysis);
+                      setCurrentBusinessConcept(domains[0]?.businessConcept || "");
+                    }} 
                   />
-                  
-                  {/* Quick search suggestions */}
-                  <div className="mt-6 flex justify-center">
-                    <div className="flex gap-3 flex-wrap justify-center">
-                      <span className="text-slate-500 text-sm">Popular:</span>
-                      {quickSearches.map((suggestion, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleQuickSearch(suggestion)}
-                          className="px-3 py-1 text-sm bg-white border border-slate-200 rounded-full hover:border-brand-300 hover:bg-brand-50 transition-colors"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
+                </TabsContent>
+                
+                <TabsContent value="keyword">
+                  <div className="w-full">
+                    <DomainSearchForm
+                      searchQuery={searchQuery}
+                      onSearchQueryChange={setSearchQuery}
+                      onSearch={(query) => {
+                        setSearchQuery(query);
+                        setIsSearching(true);
+                      }}
+                      isSearching={isSearching}
+                      setIsSearching={setIsSearching}
+                      onResults={setSearchResults}
+                      filters={filters}
+                    />
                   </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         </div>
       </section>
@@ -134,7 +136,7 @@ export default function Home() {
           <section className="mb-12 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 mb-6">
               <Brain className="text-purple-600 w-6 h-6" />
-              <h3 className="text-2xl font-bold text-slate-900">
+              <h3 className="text-2xl font-bold text-slate-900 text-left">
                 AI-Generated Domain Suggestions
               </h3>
               <Badge className="bg-purple-100 text-purple-700">
@@ -173,9 +175,9 @@ export default function Home() {
 
         {/* Welcome message when no results */}
         {searchResults.length === 0 && aiDomains.length === 0 && (
-          <div className="text-center py-16 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md mx-auto">
-              <Zap className="text-brand-400 w-16 h-16 mx-auto mb-4" />
+          <div className="text-left py-16 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md">
+              <Zap className="text-brand-400 w-16 h-16 mb-4" />
               <h3 className="text-xl font-semibold text-slate-900 mb-2">
                 Ready to find your perfect domain?
               </h3>
@@ -190,9 +192,9 @@ export default function Home() {
       {/* Registrar Partners */}
       <section className="bg-white py-16 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-left mb-12">
             <h3 className="text-2xl font-bold text-slate-900 mb-4">Compare Prices Across Multiple Registrars</h3>
-            <p className="text-slate-600 max-w-2xl mx-auto">
+            <p className="text-slate-600 max-w-2xl">
               We show you prices from all major registrars so you can find the best deal for your domain.
             </p>
           </div>
@@ -218,7 +220,7 @@ export default function Home() {
               <div className="text-sm text-slate-500">From $20.00</div>
             </div>
           </div>
-          <div className="text-center mt-8">
+          <div className="text-left mt-8">
             <p className="text-sm text-slate-500">
               Click "Compare Prices" on any available domain to see all registrar options with direct purchase links.
             </p>
