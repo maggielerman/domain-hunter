@@ -17,14 +17,19 @@ export function FavoriteButton({ domainId, domainName, className }: FavoriteButt
   const queryClient = useQueryClient();
   
   // Check if domain is favorited
-  const { data: isFavorited = false } = useQuery({
+  const { data: favoriteData = { isFavorited: false } } = useQuery({
     queryKey: ['/api/favorites/check', domainId],
     enabled: isSignedIn,
   });
+  
+  const isFavorited = favoriteData.isFavorited;
 
   // Add to favorites mutation
   const addFavoriteMutation = useMutation({
-    mutationFn: () => apiRequest('/api/favorites', 'POST', { domainId }),
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/favorites', { domainId });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
       queryClient.invalidateQueries({ queryKey: ['/api/favorites/check', domainId] });
@@ -33,7 +38,10 @@ export function FavoriteButton({ domainId, domainName, className }: FavoriteButt
 
   // Remove from favorites mutation
   const removeFavoriteMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/favorites/${domainId}`, 'DELETE'),
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', `/api/favorites/${domainId}`);
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
       queryClient.invalidateQueries({ queryKey: ['/api/favorites/check', domainId] });

@@ -824,14 +824,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/favorites/check/:domainId", requireAuth, async (req: any, res) => {
+  app.get("/api/favorites/check/:domainId", async (req: any, res) => {
     try {
+      const userId = await verifyClerkToken(req.headers.authorization);
+      if (!userId) {
+        // User not authenticated, return false (not favorited)
+        return res.json({ isFavorited: false });
+      }
+      
       const { domainId } = req.params;
-      const isFavorited = await storage.isFavorited(req.userId, parseInt(domainId));
-      res.json(isFavorited);
+      const isFavorited = await storage.isFavorited(userId, parseInt(domainId));
+      res.json({ isFavorited });
     } catch (error: any) {
       console.error('Check favorite error:', error);
-      res.status(500).json({ error: "Failed to check favorite status" });
+      res.json({ isFavorited: false });
+    }
+  });
+
+  app.get("/api/favorites/check", async (req: any, res) => {
+    try {
+      const userId = await verifyClerkToken(req.headers.authorization);
+      if (!userId) {
+        return res.json({ isFavorited: false });
+      }
+      res.json({ isFavorited: false });
+    } catch (error: any) {
+      res.json({ isFavorited: false });
     }
   });
 
